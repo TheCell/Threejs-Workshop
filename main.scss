@@ -6,18 +6,39 @@ $color-highlight: #f4231f;
 $color-highlight-2: #f4b61a;
 
 html {
-    background-color: $color-background;
-    color: $color-font;
+  background-color: $color-background;
+  color: $color-font;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+nav {
+  background-color: $color-dark;
+  padding: 1em;
+  margin-bottom: 4em;
 }
 
 a {
-    color: $color-highlight-2;
+  color: $color-highlight-2;
 }
 
 a:visited {
-    color: $color-highlight;
+  color: $color-highlight;
 }
 
 canvas {
-    border: #7492b1 1px solid;
+  border: $color-light 1px solid;
+  width: 100%;
+  height: 100%;
+}
+
+.three-container {
+  width: calc(100% - 10em);
+  height: 100%;
+  padding: 0px 5em;
 }

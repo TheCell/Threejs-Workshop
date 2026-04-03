@@ -15,6 +15,10 @@ The defacto standard 3D Library for web.
 - The manual is here: [Manuel](https://threejs.org/manual/)
 - Lots of examples: [Examples](https://threejs.org/examples/)
 
+## Stats
+[Stats.js](https://www.npmjs.com/package/statsjs)  
+measure the frames per second
+
 ## Lil-gui
 [Debug-UI](https://www.npmjs.com/package/lil-gui)  
 Lightweight, easy to use Debug Menu. You can find a guide here: [Lil-GUI Guide](https://lil-gui.georgealways.com/#Guide)
