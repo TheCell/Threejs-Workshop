@@ -1,0 +1,23 @@
+$color-background: #2d2f3b;
+$color-font: #d4dfd4;
+$color-dark: #2f383f;
+$color-light: #7492b1;
+$color-highlight: #f4231f;
+$color-highlight-2: #f4b61a;
+
+html {
+    background-color: $color-background;
+    color: $color-font;
+}
+
+a {
+    color: $color-highlight-2;
+}
+
+a:visited {
+    color: $color-highlight;
+}
+
+canvas {
+    border: #7492b1 1px solid;
+}
