@@ -95,7 +95,6 @@ function resizeRendererToDisplaySize(renderer: THREE.WebGLRenderer) {
   return needResize;
 }
 
-
 main();
 setupGui();
 requestAnimationFrame(render);
