@@ -23,6 +23,8 @@ let lightColor = 0xFFFFFF;
 let lightIntensity = 1;
 let light: THREE.DirectionalLight | undefined;
 let ambientLight: THREE.AmbientLight | undefined;
+let axesHelper: THREE.AxesHelper | undefined;
+let showAxes = false;
 
 const physics = await JoltPhysics();
 
@@ -49,11 +51,6 @@ function main() {
   const material = new THREE.MeshPhongMaterial({ color: 0x44aa88 });
   cube = new THREE.Mesh(geometry, material);
   scene.add(cube);
-
-  const axesHelper = new THREE.AxesHelper(1);
-  console.log(axesHelper);
-  
-  scene.add( axesHelper );
 
   const floor = createMeshFloor(20, 0.5, 1, 0, -0.5, -1);
   scene.add(floor);
@@ -125,20 +122,36 @@ function resizeRendererToDisplaySize(renderer: THREE.WebGLRenderer) {
 function setupGui() {
   const gui = new GUI();
   
-  const displayDebugController = gui.add({ displayDebug }, 'displayDebug')
+  const displayFolder = gui.addFolder('Display');
+
+  displayFolder.add({ displayDebug }, 'displayDebug')
     .name('Display Debug')
     .onChange((value: boolean) => {
       displayDebug = value;
       stats.showPanel(displayDebug ? 0 : -1); // 0: fps, 1: ms, 2: mb, 3+: custom
     });
 
-  const limitFpsController = gui.add({ limitFps }, 'limitFps')
+  displayFolder.add({ limitFps }, 'limitFps')
     .name('Limit FPS')
     .onChange((value: boolean) => {
       limitFps = value;
     });
 
-  const maxObjectsController = gui.add({ maxObjects }, 'maxObjects', 1, 1000, 1)
+  displayFolder.add({ showAxes }, 'showAxes')
+    .name('Axes Helper')
+    .onChange((value: boolean) => {
+      showAxes = value;
+      if (showAxes) {
+        axesHelper = new THREE.AxesHelper(1);
+        scene!.add(axesHelper);
+      } else if (axesHelper) {
+        scene!.remove(axesHelper);
+        axesHelper.dispose();
+        axesHelper = undefined;
+      }
+    });
+
+  gui.add({ maxObjects }, 'maxObjects', 1, 1000, 1)
     .name('Max Objects')
     .onChange((value: number) => {
       maxObjects = value;
@@ -149,9 +162,6 @@ function setupGui() {
   lightFolder.addColor({ color: lightColor }, 'color')
     .name('Color')
     .onChange((value: number) => {
-      console.log(value);
-      
-      
       lightColor = value;
       if (light) {
         light.color.setHex(lightColor);
