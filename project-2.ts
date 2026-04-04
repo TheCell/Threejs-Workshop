@@ -26,6 +26,9 @@ let ambientLight: THREE.AmbientLight | undefined;
 let axesHelper: THREE.AxesHelper | undefined;
 let showAxes = false;
 
+const spawnedMeshes: THREE.Mesh[] = [];
+let spawnInterval: ReturnType<typeof setInterval> | undefined;
+
 const physics = await JoltPhysics();
 
 function main() {
@@ -65,6 +68,7 @@ function main() {
   renderer.render(scene, camera);
   
   setupGui();
+  startSpawning();
   requestAnimationFrame(render);
 }
 
@@ -157,6 +161,8 @@ function setupGui() {
     .name('Max Objects')
     .onChange((value: number) => {
       maxObjects = value;
+      clearSpawnedMeshes();
+      startSpawning();
     });
 
   // add  light parameters in a folder
@@ -233,5 +239,66 @@ function createMeshFloor(n: number, cellSize: number, maxHeight: number, posX: n
   // scene!.add(mesh);
   return mesh;
 }
+
+function spawnMesh() {
+  if (spawnedMeshes.length >= maxObjects) {
+    clearInterval(spawnInterval);
+    spawnInterval = undefined;
+    return;
+  }
+
+  const size = 0.15 + Math.random() * 0.3;
+  const geometries = [
+    new THREE.BoxGeometry(size, size, size),
+    new THREE.SphereGeometry(size / 2, 16, 12),
+    new THREE.ConeGeometry(size / 2, size, 16),
+    new THREE.CylinderGeometry(size / 2, size / 2, size, 16),
+    new THREE.TorusGeometry(size / 2, size / 6, 12, 24),
+    new THREE.TetrahedronGeometry(size / 2),
+    new THREE.OctahedronGeometry(size / 2),
+    new THREE.DodecahedronGeometry(size / 2),
+  ];
+  const geometry = geometries[Math.floor(Math.random() * geometries.length)];
+  const material = new THREE.MeshPhongMaterial({ color: 0xc7c7c7 });
+  const mesh = new THREE.Mesh(geometry, material);
+
+  mesh.position.set(
+    (Math.random() - 0.5) * 8,
+    -2 + Math.random() * 2,
+    -1 + (Math.random() - 0.5) * 8
+  );
+  mesh.rotation.set(
+    Math.random() * Math.PI,
+    Math.random() * Math.PI,
+    Math.random() * Math.PI
+  );
+  scene!.add(mesh);
+  spawnedMeshes.push(mesh);
+}
+
+function startSpawning() {
+  if (spawnInterval !== undefined) return;
+  spawnInterval = setInterval(spawnMesh, 1000);
+}
+
+function clearSpawnedMeshes() {
+  for (const mesh of spawnedMeshes) {
+    scene!.remove(mesh);
+    (mesh.geometry as THREE.BufferGeometry).dispose();
+    (mesh.material as THREE.Material).dispose();
+  }
+  spawnedMeshes.length = 0;
+  clearInterval(spawnInterval);
+  spawnInterval = undefined;
+}
+
+function createMeshForShape(shape: THREE.Shape): THREE.Mesh {
+  const geometry = new THREE.ShapeGeometry(shape);
+  geometry.computeVertexNormals();
+
+  const material = new THREE.MeshPhongMaterial({ color: 0xc7c7c7, side: THREE.DoubleSide });
+  return new THREE.Mesh(geometry, material);
+}
+
 
 main();
