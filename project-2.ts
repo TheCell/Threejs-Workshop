@@ -58,7 +58,7 @@ function main() {
   addDirectionalLight(scene);
   
   controls = new OrbitControls(camera, renderer.domElement);
-  camera.position.set( 0, 4, 0 );
+  camera.position.set( 0, 4, 4 );
   controls.update();
   renderer.render(scene, camera);
   
