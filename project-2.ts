@@ -1,9 +1,12 @@
 import * as THREE from 'three';
 import GUI from 'lil-gui';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { JoltPhysics } from 'three/addons/physics/JoltPhysics.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 let displayDebug = false;
 let limitFps = true;
+let maxObjects = 100;
 
 let stats = new Stats();
 stats.showPanel(displayDebug ? 0 : -1);
@@ -14,8 +17,14 @@ let cube: THREE.Mesh | undefined;
 let renderer: THREE.WebGLRenderer | undefined;
 let scene: THREE.Scene | undefined;
 let camera: THREE.PerspectiveCamera | undefined;
+let controls: OrbitControls | undefined;
 
+let lightColor = 0xFFFFFF;
+let lightIntensity = 1;
+let light: THREE.DirectionalLight | undefined;
+let ambientLight: THREE.AmbientLight | undefined;
 
+const physics = await JoltPhysics();
 
 function main() {
   const canvas = document.querySelector('#c');
@@ -27,8 +36,8 @@ function main() {
 
   const fov = 75;
   const aspect = 2;
-  const near = 0.1;
-  const far = 5;
+  const near = 0.01;
+  const far = 10;
   camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
   camera.position.z = 2;
 
@@ -37,10 +46,27 @@ function main() {
   const boxHeight = 1;
   const boxDepth = 1;
   const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
-  const material = new THREE.MeshBasicMaterial({color: 0x44aa88});
+  const material = new THREE.MeshPhongMaterial({ color: 0x44aa88 });
   cube = new THREE.Mesh(geometry, material);
   scene.add(cube);
+
+  const axesHelper = new THREE.AxesHelper(1);
+  console.log(axesHelper);
+  
+  scene.add( axesHelper );
+
+  const floor = createMeshFloor(20, 0.5, 1, 0, -0.5, -1);
+  scene.add(floor);
+
+  addDirectionalLight(scene);
+  
+  controls = new OrbitControls(camera, renderer.domElement);
+  camera.position.set( 0, 4, 0 );
+  controls.update();
   renderer.render(scene, camera);
+  
+  setupGui();
+  requestAnimationFrame(render);
 }
 
 let lastRenderTime = 0;
@@ -56,6 +82,7 @@ function render(time: number) {
     camera!.updateProjectionMatrix();
   }
   
+  controls!.update();
   renderer!.render(scene!, camera!);
   if (!limitFps) {
     requestAnimationFrame(render);
@@ -95,10 +122,6 @@ function resizeRendererToDisplaySize(renderer: THREE.WebGLRenderer) {
   return needResize;
 }
 
-main();
-setupGui();
-requestAnimationFrame(render);
-
 function setupGui() {
   const gui = new GUI();
   
@@ -115,8 +138,87 @@ function setupGui() {
       limitFps = value;
     });
 
+  const maxObjectsController = gui.add({ maxObjects }, 'maxObjects', 1, 1000, 1)
+    .name('Max Objects')
+    .onChange((value: number) => {
+      maxObjects = value;
+    });
+
+  // add  light parameters in a folder
+  const lightFolder = gui.addFolder('Light');
+  lightFolder.addColor({ color: lightColor }, 'color')
+    .name('Color')
+    .onChange((value: number) => {
+      console.log(value);
+      
+      
+      lightColor = value;
+      if (light) {
+        light.color.setHex(lightColor);
+      }
+      if (ambientLight) {
+        ambientLight.color.setHex(lightColor);
+      }
+    });
+
+  lightFolder.add({ intensity: lightIntensity }, 'intensity', 0, 4)
+    .name('Intensity')
+    .onChange((value: number) => {
+      lightIntensity = value;
+      if (light) {
+        light.intensity = lightIntensity;
+      }
+    });
+
   const cubeFolder = gui.addFolder('Cube');
   cubeFolder.add(cube!.position, 'x', -2, 2);
   cubeFolder.add(cube!.position, 'y', -2, 2);
   cubeFolder.open();
 }
+
+function addDirectionalLight(scene: THREE.Scene) {
+  light = new THREE.DirectionalLight(lightColor, lightIntensity);
+  light.position.set(10, 10, 1);
+  scene.add(light);
+
+  ambientLight = new THREE.AmbientLight(0xFFFFFF, 1);
+  scene.add(ambientLight);
+}
+
+function createMeshFloor(n: number, cellSize: number, maxHeight: number, posX: number, posY: number, posZ: number): THREE.Mesh {
+  let height = function (x: number, y: number) { return Math.sin(x / 2) * Math.cos(y / 3); };
+
+  const vertices: number[] = [];
+  for (let x = 0; x < n; ++x) {
+    for (let z = 0; z < n; ++z) {
+      let center = n * cellSize / 2;
+
+      let x1 = cellSize * x - center;
+      let z1 = cellSize * z - center;
+      let x2 = x1 + cellSize;
+      let z2 = z1 + cellSize;
+
+      // Triangle 1
+      vertices.push(x1, height(x, z), z1);
+      vertices.push(x1, height(x, z + 1), z2);
+      vertices.push(x2, height(x + 1, z + 1), z2);
+
+      // Triangle 2
+      vertices.push(x1, height(x, z), z1);
+      vertices.push(x2, height(x + 1, z + 1), z2);
+      vertices.push(x2, height(x + 1, z), z1);
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.computeVertexNormals();
+
+  const material = new THREE.MeshPhongMaterial({ color: 0xAAAAAA, side: THREE.DoubleSide });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(posX, posY, posZ);
+  // scene!.add(mesh);
+  return mesh;
+}
+
+main();

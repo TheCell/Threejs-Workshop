@@ -7,6 +7,11 @@ Small Presentation:
 - BiBaBoulder 
 - Final Projects
 
+# Getting Started
+1. Download the repository
+2. run npm install
+3. run npm start
+
 # Libraries in use
 ## Three.js
 [Three.js](https://www.npmjs.com/package/three)  
@@ -27,14 +32,30 @@ Lightweight, easy to use Debug Menu. You can find a guide here: [Lil-GUI Guide](
 Generated with [Khroma](https://www.khroma.co/generator)  
 Used to pick the colors for this project.
 
+This workshop uses Images and code provided by Three.js and JoltPhysics.
 
 # Project 1
-- Basic Camera and interaction
+- Basic Camera
 - 3D Model import / export
+- Interaction with Objects
+
+## Camera
+1. Create Camera
+    - ![cameraFrustum](./images/frustum-3d.svg)
+2. Create more Objects
+3. Use different Materials
+    - MeshPhongMaterial
+    - MeshBasicMaterial
+4. Add Light
+    
 
 # Project 2
+- OrbitCamera
 - Physics interaction
 - Add-ons / Plugins
+## Step by Step
+1. Add Orbit Controls
+    - https://threejs.org/docs/?q=orbit#OrbitControls
 
 # Project 3
 - Write your own Shader
