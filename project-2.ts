@@ -39,7 +39,7 @@ function main() {
   const fov = 75;
   const aspect = 2;
   const near = 0.01;
-  const far = 10;
+  const far = 15;
   camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
   camera.position.z = 2;
 
@@ -50,15 +50,17 @@ function main() {
   const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
   const material = new THREE.MeshPhongMaterial({ color: 0x44aa88 });
   cube = new THREE.Mesh(geometry, material);
+  cube.position.set(0, -2, 0);
   scene.add(cube);
 
-  const floor = createMeshFloor(20, 0.5, 1, 0, -0.5, -1);
+  const floor = createMeshFloor(20, 0.5, 1, 0, -4, -1);
   scene.add(floor);
 
   addDirectionalLight(scene);
   
   controls = new OrbitControls(camera, renderer.domElement);
-  camera.position.set( 0, 4, 4 );
+  controls.target.set(0, -4, -1);
+  camera.position.set(0, 2, 9);
   controls.update();
   renderer.render(scene, camera);
   
@@ -183,6 +185,7 @@ function setupGui() {
   const cubeFolder = gui.addFolder('Cube');
   cubeFolder.add(cube!.position, 'x', -2, 2);
   cubeFolder.add(cube!.position, 'y', -2, 2);
+  cubeFolder.add(cube!.position, 'z', -2, 2);
   cubeFolder.open();
 }
 
