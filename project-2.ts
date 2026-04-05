@@ -61,6 +61,17 @@ function main() {
   const floor = createMeshFloor(20, 0.5, 1, 0, -4, -1);
   scene.add(floor);
 
+  // JoltPhysics only supports primitive geometries (BoxGeometry, SphereGeometry).
+  // Use an invisible flat box collider to represent the floor in the physics simulation.
+  // The box spans the same 10x10 footprint as the visual terrain mesh (n=20, cellSize=0.5).
+  const floorCollider = new THREE.Mesh(
+    new THREE.BoxGeometry(10, 0.1, 10),
+    new THREE.MeshBasicMaterial({ visible: false })
+  );
+  floorCollider.position.set(0, -4, -1);
+  scene.add(floorCollider);
+  physics.addMesh(floorCollider, 0);
+
   addDirectionalLight(scene);
   
   controls = new OrbitControls(camera, renderer.domElement);
@@ -280,6 +291,8 @@ function spawnMesh() {
   );
   scene!.add(mesh);
   spawnedMeshes.push(mesh);
+  
+  physics.addMesh(mesh, 1);
 }
 
 function startSpawning() {
