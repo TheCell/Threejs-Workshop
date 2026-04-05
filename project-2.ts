@@ -15,7 +15,6 @@ stats.showPanel(displayDebug ? 0 : -1);
 document.body.appendChild(stats.dom);
 
 // Three.js stuff
-let cube: THREE.Mesh | undefined;
 let renderer: THREE.WebGLRenderer | undefined;
 let scene: THREE.Scene | undefined;
 let camera: THREE.PerspectiveCamera | undefined;
@@ -79,28 +78,9 @@ function main() {
   camera.position.z = 2;
 
   scene = new THREE.Scene();
-  const boxWidth = 1;
-  const boxHeight = 1;
-  const boxDepth = 1;
-  const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
-  const material = new THREE.MeshPhongMaterial({ color: 0x44aa88 });
-  cube = new THREE.Mesh(geometry, material);
-  cube.position.set(0, -2, 0);
-  scene.add(cube);
 
-  const floor = createMeshFloor(20, 0.5, 1, 0, -4, -1);
+  const floor = createMeshFloor(40, 0.5, 1, 0, -4, -1);
   scene.add(floor);
-
-  // JoltPhysics only supports primitive geometries (BoxGeometry, SphereGeometry).
-  // Use an invisible flat box collider to represent the floor in the physics simulation.
-  // The box spans the same 10x10 footprint as the visual terrain mesh (n=20, cellSize=0.5).
-  const floorCollider = new THREE.Mesh(
-    new THREE.BoxGeometry(10, 0.1, 10),
-    new THREE.MeshBasicMaterial({ visible: false })
-  );
-  floorCollider.position.set(0, -4, -1);
-  scene.add(floorCollider);
-  // physics.addMesh(floorCollider, 0);
 
   addDirectionalLight(scene);
   
@@ -147,11 +127,6 @@ function render(time: number) {
 function animate(time: number) {
   time *= 0.001;  // convert time to seconds
   
-  if (cube) {
-    cube.rotation.x = time;
-    cube.rotation.y = time;
-  }
-
   for (const { mesh, body } of dynamicBodies) {
     const pos = body.GetPosition();
     const rot = body.GetRotation();
@@ -236,18 +211,19 @@ function setupGui() {
         light.intensity = lightIntensity;
       }
     });
-
-  const cubeFolder = gui.addFolder('Cube');
-  cubeFolder.add(cube!.position, 'x', -2, 2);
-  cubeFolder.add(cube!.position, 'y', -2, 2);
-  cubeFolder.add(cube!.position, 'z', -2, 2);
-  cubeFolder.open();
 }
 
 function addDirectionalLight(scene: THREE.Scene) {
   light = new THREE.DirectionalLight(lightColor, lightIntensity);
   light.position.set(10, 10, 1);
   light.castShadow = true;
+  light.shadow.camera.left = -12;
+  light.shadow.camera.right = 12;
+  light.shadow.camera.top = 12;
+  light.shadow.camera.bottom = -12;
+  light.shadow.camera.near = 0.1;
+  light.shadow.camera.far = 40;
+  light.shadow.mapSize.set(2048, 2048);
   scene.add(light);
 
   ambientLight = new THREE.AmbientLight(0xFFFFFF, 1);
@@ -316,6 +292,7 @@ function createMeshFloor(n: number, cellSize: number, maxHeight: number, posX: n
   
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.set(posX, posY, posZ);
+  mesh.receiveShadow = true;
   return mesh;
 }
 
