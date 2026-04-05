@@ -17,10 +17,13 @@ let camera: THREE.PerspectiveCamera | undefined;
 
 let lightColor = 0xFFFFFF;
 let lightIntensity = 1;
+let lightAngle = 0;
+const lightRadius = 10;
 let light: THREE.DirectionalLight | undefined;
 let ambientLight: THREE.AmbientLight | undefined;
 let axesHelper: THREE.AxesHelper | undefined;
 let showAxes = false;
+let rotateObjects = true;
 
 function main() {
   const canvas = document.querySelector('#c');
@@ -29,6 +32,7 @@ function main() {
   }
 
   renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
+  renderer.shadowMap.enabled = true;
 
   const fov = 75;
   const aspect = 2;
@@ -82,9 +86,11 @@ function render(time: number) {
 function animate(time: number) {
   time *= 0.001;  // convert time to seconds
   
-  for (const mesh of meshes) {
-    mesh.rotation.x = time;
-    mesh.rotation.y = time;
+  if (rotateObjects) {
+    for (const mesh of meshes) {
+      mesh.rotation.x = time;
+      mesh.rotation.y = time;
+    }
   }
 }
 
@@ -117,6 +123,12 @@ function setupGui() {
     .name('Limit FPS')
     .onChange((value: boolean) => {
       limitFps = value;
+    });
+
+  displayFolder.add({ rotateObjects }, 'rotateObjects')
+    .name('Rotate Objects')
+    .onChange((value: boolean) => {
+      rotateObjects = value;
     });
 
   displayFolder.add({ showAxes }, 'showAxes')
@@ -156,11 +168,21 @@ function setupGui() {
       }
     });
 
+  lightFolder.add({ angle: lightAngle }, 'angle', 0, 2 * Math.PI)
+    .name('Angle')
+    .onChange((value: number) => {
+      lightAngle = value;
+      if (light) {
+        light.position.set(Math.cos(lightAngle) * lightRadius, 10, Math.sin(lightAngle) * lightRadius);
+      }
+    });
+
 }
 
 function addDirectionalLight(scene: THREE.Scene) {
   light = new THREE.DirectionalLight(lightColor, lightIntensity);
-  light.position.set(10, 10, 1);
+  light.position.set(Math.cos(lightAngle) * lightRadius, 10, Math.sin(lightAngle) * lightRadius);
+  light.castShadow = true;
   scene.add(light);
 
   ambientLight = new THREE.AmbientLight(0xFFFFFF, 1);
@@ -191,10 +213,19 @@ function addShapes(scene: THREE.Scene) {
       }
       const torusKnot = new THREE.Mesh(new THREE.TorusKnotGeometry(0.3, 0.08, 100, 16), getMeshByName(materialName, colors[i * 3 + j]));
       torusKnot.position.set(-2 + i * 2, 0, 2 - j * 2);
+      torusKnot.castShadow = true;
       scene.add(torusKnot);
       meshes.push(torusKnot);
     }
   }
+
+  const planeGeo = new THREE.PlaneGeometry(10, 10);
+  const planeMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
+  const plane = new THREE.Mesh(planeGeo, planeMat);
+  plane.rotation.x = -Math.PI / 2;
+  plane.position.y = -0.5;
+  plane.receiveShadow = true;
+  scene.add(plane);
 }
 
 function getMeshByName(
