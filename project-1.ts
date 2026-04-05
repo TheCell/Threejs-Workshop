@@ -176,7 +176,6 @@ function addShapes(scene: THREE.Scene) {
   const materialNames = [
     'basicMaterial',
     'normalMaterial',
-    'lambertMaterial',
     'phongMaterial',
   ] as const;
   const colors = [
@@ -192,77 +191,27 @@ function addShapes(scene: THREE.Scene) {
   cube = new THREE.Mesh(geometry, randomMaterial(0));
   scene.add(cube);
 
-  // Sphere
-  const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 16), randomMaterial(1));
-  sphere.position.set(2, 0, 0);
-  scene.add(sphere);
-
-  // Cylinder
-  const cylinder = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1, 32), randomMaterial(2));
-  cylinder.position.set(-2, 0, 0);
-  scene.add(cylinder);
-
-  // Cone
-  const cone = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1, 32), randomMaterial(3));
-  cone.position.set(0, 0, 2);
-  scene.add(cone);
-
-  // Torus
-  const torus = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.15, 16, 100), randomMaterial(4));
-  torus.position.set(2, 0, 2);
-  scene.add(torus);
-
-  // TorusKnot
-  const torusKnot = new THREE.Mesh(new THREE.TorusKnotGeometry(0.4, 0.1, 100, 16), randomMaterial(5));
-  torusKnot.position.set(-2, 0, 2);
-  scene.add(torusKnot);
-
-  // Plane
-  const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), randomMaterial(6));
-  plane.position.set(0, 0, -2);
-  scene.add(plane);
-
-  // Circle
-  const circle = new THREE.Mesh(new THREE.CircleGeometry(0.5, 32), randomMaterial(7));
-  circle.position.set(2, 0, -2);
-  scene.add(circle);
-
-  // Ring
-  const ring = new THREE.Mesh(new THREE.RingGeometry(0.3, 0.5, 32), randomMaterial(8));
-  ring.position.set(-2, 0, -2);
-  scene.add(ring);
-
-  // Dodecahedron
-  const dodecahedron = new THREE.Mesh(new THREE.DodecahedronGeometry(0.5), randomMaterial(9));
-  dodecahedron.position.set(4, 0, 0);
-  scene.add(dodecahedron);
-
-  // Icosahedron
-  const icosahedron = new THREE.Mesh(new THREE.IcosahedronGeometry(0.5), randomMaterial(10));
-  icosahedron.position.set(-4, 0, 0);
-  scene.add(icosahedron);
-
-  // Octahedron
-  const octahedron = new THREE.Mesh(new THREE.OctahedronGeometry(0.5), randomMaterial(11));
-  octahedron.position.set(4, 0, 2);
-  scene.add(octahedron);
-
-  // Tetrahedron
-  const tetrahedron = new THREE.Mesh(new THREE.TetrahedronGeometry(0.5), randomMaterial(12));
-  tetrahedron.position.set(-4, 0, 2);
-  scene.add(tetrahedron);
-
-  // Capsule
-  const capsule = new THREE.Mesh(new THREE.CapsuleGeometry(0.3, 0.5, 4, 8), randomMaterial(13));
-  capsule.position.set(4, 0, -2);
-  scene.add(capsule);
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      let materialName: 'basicMaterial' | 'normalMaterial' | 'phongMaterial';
+      if (i === 1 && j === 1) {
+        materialName = 'normalMaterial';
+      } else if (i === 0) {
+        materialName = 'basicMaterial';
+      } else {
+        materialName = 'phongMaterial';
+      }
+      const torusKnot = new THREE.Mesh(new THREE.TorusKnotGeometry(0.3, 0.08, 100, 16), getMeshByName(materialName, colors[i * 3 + j + 1]));
+      torusKnot.position.set(-2 + i * 2, 0, 2 - j * 2);
+      scene.add(torusKnot);
+    }
+  }
 }
 
 function getMeshByName(
   meshname:
     | 'basicMaterial'
     | 'normalMaterial'
-    | 'lambertMaterial'
     | 'phongMaterial',
   color: THREE.ColorRepresentation
 ) {
@@ -271,8 +220,6 @@ function getMeshByName(
       return new THREE.MeshBasicMaterial({ color });
     case 'normalMaterial':
       return new THREE.MeshNormalMaterial();
-    case 'lambertMaterial':
-      return new THREE.MeshLambertMaterial({ color });
     case 'phongMaterial':
       return new THREE.MeshPhongMaterial({ color });
     default:
