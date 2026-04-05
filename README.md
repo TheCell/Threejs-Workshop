@@ -28,6 +28,10 @@ measure the frames per second
 [Debug-UI](https://www.npmjs.com/package/lil-gui)  
 Lightweight, easy to use Debug Menu. You can find a guide here: [Lil-GUI Guide](https://lil-gui.georgealways.com/#Guide)
 
+## Jolt
+[JoltPhysics.js](https://github.com/jrouwe/JoltPhysics.js)  
+A webassembly of the famous Jolt Physics Engine.
+
 ## Color Palette
 Generated with [Khroma](https://www.khroma.co/generator)  
 Used to pick the colors for this project.
