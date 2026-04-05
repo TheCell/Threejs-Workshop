@@ -1,7 +1,10 @@
 import * as THREE from 'three';
 import GUI from 'lil-gui';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { ImprovedNoise } from 'three/addons/math/ImprovedNoise.js';
 import JoltPhysics from 'jolt-physics/wasm';
+
+const improvedNoise = new ImprovedNoise();
 const Jolt = await JoltPhysics();
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -231,7 +234,7 @@ function addDirectionalLight(scene: THREE.Scene) {
 }
 
 function createMeshFloor(n: number, cellSize: number, maxHeight: number, posX: number, posY: number, posZ: number): THREE.Mesh {
-  const heightFn = (x: number, y: number) => Math.sin(x / 2) * Math.cos(y / 3);
+  const heightFn = (x: number, y: number) => improvedNoise.noise(x / 5, maxHeight, y / 5);
 
   // Build Jolt triangle list
   const triangles = new Jolt.TriangleList();
