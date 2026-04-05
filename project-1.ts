@@ -10,7 +10,7 @@ stats.showPanel(displayDebug ? 0 : -1);
 document.body.appendChild(stats.dom);
 
 // Three.js stuff
-let cube: THREE.Mesh | undefined;
+let meshes: THREE.Mesh[] = [];
 let renderer: THREE.WebGLRenderer | undefined;
 let scene: THREE.Scene | undefined;
 let camera: THREE.PerspectiveCamera | undefined;
@@ -82,9 +82,9 @@ function render(time: number) {
 function animate(time: number) {
   time *= 0.001;  // convert time to seconds
   
-  if (cube) {
-    cube.rotation.x = time;
-    cube.rotation.y = time;
+  for (const mesh of meshes) {
+    mesh.rotation.x = time;
+    mesh.rotation.y = time;
   }
 }
 
@@ -156,11 +156,6 @@ function setupGui() {
       }
     });
 
-  const cubeFolder = gui.addFolder('Cube');
-  cubeFolder.add(cube!.position, 'x', -2, 2);
-  cubeFolder.add(cube!.position, 'y', -2, 2);
-  cubeFolder.add(cube!.position, 'z', -2, 2);
-  cubeFolder.open();
 }
 
 function addDirectionalLight(scene: THREE.Scene) {
@@ -183,13 +178,6 @@ function addShapes(scene: THREE.Scene) {
     0xff1493, 0x00ced1, 0xff8c00, 0x32cd32, 0x8b4513,
     0x00bfff, 0xff4500, 0xadff2f, 0xda70d6,
   ];
-  const randomMaterial = (index: number) =>
-    getMeshByName(materialNames[Math.floor(Math.random() * materialNames.length)], colors[index % colors.length]);
-
-  // Box
-  const geometry = new THREE.BoxGeometry(1, 1, 1);
-  cube = new THREE.Mesh(geometry, randomMaterial(0));
-  scene.add(cube);
 
   for (let i = 0; i < 3; i++) {
     for (let j = 0; j < 3; j++) {
@@ -201,9 +189,10 @@ function addShapes(scene: THREE.Scene) {
       } else {
         materialName = 'phongMaterial';
       }
-      const torusKnot = new THREE.Mesh(new THREE.TorusKnotGeometry(0.3, 0.08, 100, 16), getMeshByName(materialName, colors[i * 3 + j + 1]));
+      const torusKnot = new THREE.Mesh(new THREE.TorusKnotGeometry(0.3, 0.08, 100, 16), getMeshByName(materialName, colors[i * 3 + j]));
       torusKnot.position.set(-2 + i * 2, 0, 2 - j * 2);
       scene.add(torusKnot);
+      meshes.push(torusKnot);
     }
   }
 }
