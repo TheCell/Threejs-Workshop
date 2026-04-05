@@ -65,6 +65,13 @@ Jolt.destroy(_joltSettings);
 bodyInterface = joltInterface.GetPhysicsSystem().GetBodyInterface();
 setInterval(() => { joltInterface.Step(1 / 60, 1); }, 1000 / 60);
 
+let floorMesh: THREE.Mesh | undefined;
+
+// Point light that flashes at the explosion hit position
+let explosionLight: THREE.PointLight | undefined;
+let explosionLightBorn = -Infinity;
+const EXPLOSION_LIGHT_DURATION = 0.6; // seconds
+const EXPLOSION_LIGHT_INTENSITY = 80;
 function main() {
   const canvas = document.querySelector('#c');
   if (!canvas) {
@@ -85,6 +92,7 @@ function main() {
   scene = new THREE.Scene();
 
   const floor = createMeshFloor(50, 0.5, 1, 0, -4, -1);
+  floorMesh = floor;
   scene.add(floor);
 
   // Kill floor — wide grid rendered with lines, sits below the terrain
@@ -93,7 +101,11 @@ function main() {
   scene.add(killFloorGrid);
 
   addDirectionalLight(scene);
-  
+
+  // Explosion point light — starts off, teleports to each hit and fades
+  explosionLight = new THREE.PointLight(0xff6600, 0, EXPLOSION_RADIUS * 3);
+  explosionLight.castShadow = true;
+  scene.add(explosionLight);
   controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, -4, -1);
   camera.position.set(0, 2, 9);
@@ -102,6 +114,7 @@ function main() {
   
   setupGui();
   startSpawning();
+  renderer.domElement.addEventListener('click', onCanvasClick);
   requestAnimationFrame(render);
 }
 
@@ -134,8 +147,66 @@ function render(time: number) {
   stats.end();
 }
 
+const _raycaster = new THREE.Raycaster();
+const _mouse = new THREE.Vector2();
+
+function onCanvasClick(event: MouseEvent) {
+  if (!renderer || !camera || !floorMesh) return;
+
+  const rect = renderer.domElement.getBoundingClientRect();
+  _mouse.set(
+    ((event.clientX - rect.left) / rect.width)  *  2 - 1,
+    ((event.clientY - rect.top)  / rect.height) * -2 + 1
+  );
+  _raycaster.setFromCamera(_mouse, camera);
+
+  const hits = _raycaster.intersectObject(floorMesh, false);
+  if (hits.length === 0) return;
+
+  applyExplosion(hits[0].point);
+}
+
+const EXPLOSION_RADIUS   = 2;    // units
+const EXPLOSION_STRENGTH = 36;   // impulse magnitude at centre
+
+function applyExplosion(center: THREE.Vector3) {
+  // Snap the point light to the hit position and restart its fade
+  if (explosionLight) {
+    explosionLight.position.copy(center).y += 0.5;
+    explosionLight.intensity = EXPLOSION_LIGHT_INTENSITY;
+    explosionLightBorn = performance.now() / 1000;
+  }
+
+  for (const { body } of dynamicBodies) {
+    const p = body.GetPosition();
+    const bx = p.GetX(), by = p.GetY(), bz = p.GetZ();
+    const dx = bx - center.x;
+    const dy = by - center.y;
+    const dz = bz - center.z;
+    const distSq = dx*dx + dy*dy + dz*dz;
+    if (distSq > EXPLOSION_RADIUS * EXPLOSION_RADIUS) continue;
+
+    const dist = Math.sqrt(distSq) || 0.001;
+    // Linear falloff; always push slightly upward even if object is right below
+    const falloff = 1 - dist / EXPLOSION_RADIUS;
+    const scale = EXPLOSION_STRENGTH * falloff / dist;
+    const ix = dx * scale;
+    const iy = Math.max(dy, 0.5) * scale; // bias upward
+    const iz = dz * scale;
+
+    bodyInterface.ActivateBody(body.GetID());
+    bodyInterface.AddImpulse(body.GetID(), new Jolt.Vec3(ix, iy, iz));
+  }
+}
+
 function animate(time: number) {
   time *= 0.001;  // convert time to seconds
+
+  // Fade explosion point light
+  if (explosionLight && explosionLight.intensity > 0) {
+    const t = Math.min((time - explosionLightBorn) / EXPLOSION_LIGHT_DURATION, 1);
+    explosionLight.intensity = EXPLOSION_LIGHT_INTENSITY * (1 - t) * (1 - t);
+  }
 
   const toKill: Array<{ mesh: THREE.Mesh; body: any }> = [];
   for (const entry of dynamicBodies) {
@@ -445,6 +516,12 @@ function spawnMesh() {
     Jolt.EMotionType_Dynamic, LAYER_MOVING
   );
   creationSettings.mRestitution = 0.3;
+
+  const mass = new Jolt.MassProperties();
+  mass.mMass = Math.random() * 4 + 1;
+  creationSettings.mMassPropertiesOverride = mass;
+  creationSettings.mOverrideMassProperties = Jolt.EOverrideMassProperties_CalculateInertia;
+
   const body = bodyInterface.CreateBody(creationSettings);
   bodyInterface.AddBody(body.GetID(), Jolt.EActivation_Activate);
   Jolt.destroy(creationSettings);
