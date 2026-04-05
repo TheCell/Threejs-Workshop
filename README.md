@@ -42,11 +42,13 @@ This workshop uses Images and code provided by Three.js and JoltPhysics.
 ## Camera
 1. Create Camera
     - ![cameraFrustum](./images/frustum-3d.svg)
-2. Create more Objects
-3. Use different Materials
-    - MeshPhongMaterial
+2. Create Object
+    - Cube
     - MeshBasicMaterial
 4. Add Light
+    - why does the light not work?
+5. Change the Material
+    - MeshPhongMaterial
     
 
 # Project 2

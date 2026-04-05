@@ -173,117 +173,112 @@ function addDirectionalLight(scene: THREE.Scene) {
 }
 
 function addShapes(scene: THREE.Scene) {
-  const boxWidth = 1;
-  const boxHeight = 1;
-  const boxDepth = 1;
-  const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
-  const material = new THREE.MeshBasicMaterial({color: 0x44aa88});
-  cube = new THREE.Mesh(geometry, material);
+  const materialNames = [
+    'basicMaterial',
+    'normalMaterial',
+    'lambertMaterial',
+    'phongMaterial',
+  ] as const;
+  const colors = [
+    0x44aa88, 0xff6347, 0x4169e1, 0xffd700, 0x9400d3,
+    0xff1493, 0x00ced1, 0xff8c00, 0x32cd32, 0x8b4513,
+    0x00bfff, 0xff4500, 0xadff2f, 0xda70d6,
+  ];
+  const randomMaterial = (index: number) =>
+    getMeshByName(materialNames[Math.floor(Math.random() * materialNames.length)], colors[index % colors.length]);
+
+  // Box
+  const geometry = new THREE.BoxGeometry(1, 1, 1);
+  cube = new THREE.Mesh(geometry, randomMaterial(0));
   scene.add(cube);
 
   // Sphere
-  const sphere = new THREE.Mesh(
-    new THREE.SphereGeometry(0.5, 32, 16),
-    new THREE.MeshBasicMaterial({ color: 0xff6347 })
-  );
+  const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 16), randomMaterial(1));
   sphere.position.set(2, 0, 0);
   scene.add(sphere);
 
   // Cylinder
-  const cylinder = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.5, 0.5, 1, 32),
-    new THREE.MeshBasicMaterial({ color: 0x4169e1 })
-  );
+  const cylinder = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1, 32), randomMaterial(2));
   cylinder.position.set(-2, 0, 0);
   scene.add(cylinder);
 
   // Cone
-  const cone = new THREE.Mesh(
-    new THREE.ConeGeometry(0.5, 1, 32),
-    new THREE.MeshBasicMaterial({ color: 0xffd700 })
-  );
+  const cone = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1, 32), randomMaterial(3));
   cone.position.set(0, 0, 2);
   scene.add(cone);
 
   // Torus
-  const torus = new THREE.Mesh(
-    new THREE.TorusGeometry(0.4, 0.15, 16, 100),
-    new THREE.MeshBasicMaterial({ color: 0x9400d3 })
-  );
+  const torus = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.15, 16, 100), randomMaterial(4));
   torus.position.set(2, 0, 2);
   scene.add(torus);
 
   // TorusKnot
-  const torusKnot = new THREE.Mesh(
-    new THREE.TorusKnotGeometry(0.4, 0.1, 100, 16),
-    new THREE.MeshBasicMaterial({ color: 0xff1493 })
-  );
+  const torusKnot = new THREE.Mesh(new THREE.TorusKnotGeometry(0.4, 0.1, 100, 16), randomMaterial(5));
   torusKnot.position.set(-2, 0, 2);
   scene.add(torusKnot);
 
   // Plane
-  const plane = new THREE.Mesh(
-    new THREE.PlaneGeometry(1, 1),
-    new THREE.MeshBasicMaterial({ color: 0x00ced1, side: THREE.DoubleSide })
-  );
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), randomMaterial(6));
   plane.position.set(0, 0, -2);
   scene.add(plane);
 
   // Circle
-  const circle = new THREE.Mesh(
-    new THREE.CircleGeometry(0.5, 32),
-    new THREE.MeshBasicMaterial({ color: 0xff8c00, side: THREE.DoubleSide })
-  );
+  const circle = new THREE.Mesh(new THREE.CircleGeometry(0.5, 32), randomMaterial(7));
   circle.position.set(2, 0, -2);
   scene.add(circle);
 
   // Ring
-  const ring = new THREE.Mesh(
-    new THREE.RingGeometry(0.3, 0.5, 32),
-    new THREE.MeshBasicMaterial({ color: 0x32cd32, side: THREE.DoubleSide })
-  );
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.3, 0.5, 32), randomMaterial(8));
   ring.position.set(-2, 0, -2);
   scene.add(ring);
 
   // Dodecahedron
-  const dodecahedron = new THREE.Mesh(
-    new THREE.DodecahedronGeometry(0.5),
-    new THREE.MeshBasicMaterial({ color: 0x8b4513 })
-  );
+  const dodecahedron = new THREE.Mesh(new THREE.DodecahedronGeometry(0.5), randomMaterial(9));
   dodecahedron.position.set(4, 0, 0);
   scene.add(dodecahedron);
 
   // Icosahedron
-  const icosahedron = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(0.5),
-    new THREE.MeshBasicMaterial({ color: 0x00bfff })
-  );
+  const icosahedron = new THREE.Mesh(new THREE.IcosahedronGeometry(0.5), randomMaterial(10));
   icosahedron.position.set(-4, 0, 0);
   scene.add(icosahedron);
 
   // Octahedron
-  const octahedron = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.5),
-    new THREE.MeshBasicMaterial({ color: 0xff4500 })
-  );
+  const octahedron = new THREE.Mesh(new THREE.OctahedronGeometry(0.5), randomMaterial(11));
   octahedron.position.set(4, 0, 2);
   scene.add(octahedron);
 
   // Tetrahedron
-  const tetrahedron = new THREE.Mesh(
-    new THREE.TetrahedronGeometry(0.5),
-    new THREE.MeshBasicMaterial({ color: 0xadff2f })
-  );
+  const tetrahedron = new THREE.Mesh(new THREE.TetrahedronGeometry(0.5), randomMaterial(12));
   tetrahedron.position.set(-4, 0, 2);
   scene.add(tetrahedron);
 
   // Capsule
-  const capsule = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.3, 0.5, 4, 8),
-    new THREE.MeshBasicMaterial({ color: 0xda70d6 })
-  );
+  const capsule = new THREE.Mesh(new THREE.CapsuleGeometry(0.3, 0.5, 4, 8), randomMaterial(13));
   capsule.position.set(4, 0, -2);
   scene.add(capsule);
+}
+
+function getMeshByName(
+  meshname:
+    | 'basicMaterial'
+    | 'normalMaterial'
+    | 'lambertMaterial'
+    | 'phongMaterial',
+  color: THREE.ColorRepresentation
+) {
+  switch (meshname) {
+    case 'basicMaterial':
+      return new THREE.MeshBasicMaterial({ color });
+    case 'normalMaterial':
+      return new THREE.MeshNormalMaterial();
+    case 'lambertMaterial':
+      return new THREE.MeshLambertMaterial({ color });
+    case 'phongMaterial':
+      return new THREE.MeshPhongMaterial({ color });
+    default:
+      console.warn(`Unknown mesh name: ${meshname}, using basic material as default.`);
+      return new THREE.MeshBasicMaterial({ color });
+  }
 }
 
 main();
