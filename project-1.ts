@@ -25,6 +25,48 @@ let axesHelper: THREE.AxesHelper | undefined;
 let showAxes = false;
 let rotateObjects = true;
 
+const keysPressed = new Set<string>();
+window.addEventListener('keydown', (e) => keysPressed.add(e.code));
+window.addEventListener('keyup', (e) => keysPressed.delete(e.code));
+
+const cameraSpeed = 0.05;
+const cameraForward = new THREE.Vector3();
+const cameraRight = new THREE.Vector3();
+const up = new THREE.Vector3(0, 1, 0);
+
+function updateCamera() {
+  if (!camera) return;
+  camera.getWorldDirection(cameraForward);
+  cameraForward.y = 0;
+  cameraForward.normalize();
+  cameraRight.crossVectors(cameraForward, up).normalize();
+
+  if (keysPressed.has('KeyW')) {
+    camera.position.addScaledVector(cameraForward, cameraSpeed);
+  }
+
+  if (keysPressed.has('KeyS')) {
+    camera.position.addScaledVector(cameraForward, -cameraSpeed);
+  }
+
+  if (keysPressed.has('KeyA')) {
+    camera.position.addScaledVector(cameraRight, -cameraSpeed);
+  }
+
+  if (keysPressed.has('KeyD')) {
+    camera.position.addScaledVector(cameraRight, cameraSpeed);
+  }
+
+  if (keysPressed.has('KeyQ')) {
+    camera.position.y -= cameraSpeed;
+  }
+
+  if (keysPressed.has('KeyE')) {
+    camera.position.y += cameraSpeed;
+  }
+
+}
+
 function main() {
   const canvas = document.querySelector('#c');
   if (!canvas) {
@@ -61,6 +103,8 @@ let targetFrameDuration = 1000 / targetFps;
 function render(time: number) {
   stats.begin();
   animate(time);
+
+  updateCamera();
 
   if (resizeRendererToDisplaySize(renderer!)) {
     const canvas = renderer!.domElement;
