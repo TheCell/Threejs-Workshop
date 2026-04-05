@@ -15,7 +15,12 @@ let renderer: THREE.WebGLRenderer | undefined;
 let scene: THREE.Scene | undefined;
 let camera: THREE.PerspectiveCamera | undefined;
 
-
+let lightColor = 0xFFFFFF;
+let lightIntensity = 1;
+let light: THREE.DirectionalLight | undefined;
+let ambientLight: THREE.AmbientLight | undefined;
+let axesHelper: THREE.AxesHelper | undefined;
+let showAxes = false;
 
 function main() {
   const canvas = document.querySelector('#c');
@@ -41,6 +46,11 @@ function main() {
   cube = new THREE.Mesh(geometry, material);
   scene.add(cube);
   renderer.render(scene, camera);
+
+  addDirectionalLight(scene);
+
+  setupGui();
+  requestAnimationFrame(render);
 }
 
 let lastRenderTime = 0;
@@ -95,28 +105,75 @@ function resizeRendererToDisplaySize(renderer: THREE.WebGLRenderer) {
   return needResize;
 }
 
-main();
-setupGui();
-requestAnimationFrame(render);
-
 function setupGui() {
   const gui = new GUI();
   
-  const displayDebugController = gui.add({ displayDebug }, 'displayDebug')
+  const displayFolder = gui.addFolder('Display');
+
+  displayFolder.add({ displayDebug }, 'displayDebug')
     .name('Display Debug')
     .onChange((value: boolean) => {
       displayDebug = value;
       stats.showPanel(displayDebug ? 0 : -1); // 0: fps, 1: ms, 2: mb, 3+: custom
     });
 
-  const limitFpsController = gui.add({ limitFps }, 'limitFps')
+  displayFolder.add({ limitFps }, 'limitFps')
     .name('Limit FPS')
     .onChange((value: boolean) => {
       limitFps = value;
     });
 
+  displayFolder.add({ showAxes }, 'showAxes')
+    .name('Axes Helper')
+    .onChange((value: boolean) => {
+      showAxes = value;
+      if (showAxes) {
+        axesHelper = new THREE.AxesHelper(1);
+        scene!.add(axesHelper);
+      } else if (axesHelper) {
+        scene!.remove(axesHelper);
+        axesHelper.dispose();
+        axesHelper = undefined;
+      }
+    });
+    
+  // add  light parameters in a folder
+  const lightFolder = gui.addFolder('Light');
+  lightFolder.addColor({ color: lightColor }, 'color')
+    .name('Color')
+    .onChange((value: number) => {
+      lightColor = value;
+      if (light) {
+        light.color.setHex(lightColor);
+      }
+      if (ambientLight) {
+        ambientLight.color.setHex(lightColor);
+      }
+    });
+
+  lightFolder.add({ intensity: lightIntensity }, 'intensity', 0, 4)
+    .name('Intensity')
+    .onChange((value: number) => {
+      lightIntensity = value;
+      if (light) {
+        light.intensity = lightIntensity;
+      }
+    });
+
   const cubeFolder = gui.addFolder('Cube');
   cubeFolder.add(cube!.position, 'x', -2, 2);
   cubeFolder.add(cube!.position, 'y', -2, 2);
+  cubeFolder.add(cube!.position, 'z', -2, 2);
   cubeFolder.open();
 }
+
+function addDirectionalLight(scene: THREE.Scene) {
+  light = new THREE.DirectionalLight(lightColor, lightIntensity);
+  light.position.set(10, 10, 1);
+  scene.add(light);
+
+  ambientLight = new THREE.AmbientLight(0xFFFFFF, 1);
+  scene.add(ambientLight);
+}
+
+main();
