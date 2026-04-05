@@ -41,6 +41,8 @@ let joltInterface: any = null;
 let bodyInterface: any = null;
 const dynamicBodies: Array<{ mesh: THREE.Mesh; body: any }> = [];
 
+const KILL_Y = -12; // anything below this Y is removed and respawned
+
 // const { default: initJolt } = await import(/* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/jolt-physics@1.0.0/dist/jolt-physics.wasm-compat.js');
 // Jolt = await initJolt();
 
@@ -82,8 +84,13 @@ function main() {
 
   scene = new THREE.Scene();
 
-  const floor = createMeshFloor(40, 0.5, 1, 0, -4, -1);
+  const floor = createMeshFloor(50, 0.5, 1, 0, -4, -1);
   scene.add(floor);
+
+  // Kill floor — wide grid rendered with lines, sits below the terrain
+  const killFloorGrid = new THREE.GridHelper(80, 40, 0xff2200, 0xff4400);
+  killFloorGrid.position.set(0, KILL_Y, -1);
+  scene.add(killFloorGrid);
 
   addDirectionalLight(scene);
   
@@ -129,12 +136,17 @@ function render(time: number) {
 
 function animate(time: number) {
   time *= 0.001;  // convert time to seconds
-  
-  for (const { mesh, body } of dynamicBodies) {
-    const pos = body.GetPosition();
-    const rot = body.GetRotation();
-    mesh.position.set(pos.GetX(), pos.GetY(), pos.GetZ());
-    mesh.quaternion.set(rot.GetX(), rot.GetY(), rot.GetZ(), rot.GetW());
+
+  const toKill: Array<{ mesh: THREE.Mesh; body: any }> = [];
+  for (const entry of dynamicBodies) {
+    const pos = entry.body.GetPosition();
+    const rot = entry.body.GetRotation();
+    entry.mesh.position.set(pos.GetX(), pos.GetY(), pos.GetZ());
+    entry.mesh.quaternion.set(rot.GetX(), rot.GetY(), rot.GetZ(), rot.GetW());
+    if (pos.GetY() < KILL_Y) toKill.push(entry);
+  }
+  for (const { mesh, body } of toKill) {
+    killMesh(mesh, body);
   }
 }
 
@@ -439,8 +451,32 @@ function spawnMesh() {
   dynamicBodies.push({ mesh, body });
 }
 
+function killMesh(mesh: THREE.Mesh, body: any) {
+  scene!.remove(mesh);
+  mesh.geometry.dispose();
+  (mesh.material as THREE.Material).dispose();
+
+  const si = spawnedMeshes.indexOf(mesh);
+  if (si !== -1) {
+    spawnedMeshes.splice(si, 1);
+  }
+
+  const di = dynamicBodies.findIndex(e => e.mesh === mesh);
+  if (di !== -1) {
+    dynamicBodies.splice(di, 1);
+  }
+
+  bodyInterface.RemoveBody(body.GetID());
+  bodyInterface.DestroyBody(body.GetID());
+
+  // Resume spawning now that count dropped below max
+  startSpawning();
+}
+
 function startSpawning() {
-  if (spawnInterval !== undefined) return;
+  if (spawnInterval !== undefined) {
+    return;
+  }
   spawnInterval = setInterval(spawnMesh, 1000);
 }
 
