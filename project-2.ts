@@ -319,6 +319,32 @@ function createMeshFloor(n: number, cellSize: number, maxHeight: number, posX: n
   return mesh;
 }
 
+const SPAWN_COLORS = [
+  0xff4444, 0x44cc44, 0x4488ff, 0xffcc00, 0xff44ff, 0x44ffff,
+  0xff8844, 0x88ff44, 0x4488cc, 0xff4488, 0x44ff88, 0xaa44ff,
+];
+
+/** Extract a Three.js BufferGeometry from any Jolt shape via ShapeGetTriangles. */
+function getThreeGeometryFromShape(shape: any): THREE.BufferGeometry {
+  const scale = new Jolt.Vec3(1, 1, 1);
+  const triCtx = new Jolt.ShapeGetTriangles(
+    shape, Jolt.AABox.prototype.sBiggest(),
+    shape.GetCenterOfMass(), Jolt.Quat.prototype.sIdentity(), scale
+  );
+  Jolt.destroy(scale);
+  const vertexData = new Float32Array(
+    Jolt.HEAPF32.buffer,
+    triCtx.GetVerticesData(),
+    triCtx.GetVerticesSize() / Float32Array.BYTES_PER_ELEMENT
+  );
+  const buffer = new THREE.BufferAttribute(vertexData, 3).clone();
+  Jolt.destroy(triCtx);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', buffer);
+  geo.computeVertexNormals();
+  return geo;
+}
+
 function spawnMesh() {
   if (spawnedMeshes.length >= maxObjects) {
     clearInterval(spawnInterval);
@@ -326,25 +352,111 @@ function spawnMesh() {
     return;
   }
 
-  const size = 0.15 + Math.random() * 0.3;
-  // Only BoxGeometry and SphereGeometry are supported by JoltPhysics getShape()
-  const geometries = [
-    new THREE.BoxGeometry(size, size, size),
-    new THREE.SphereGeometry(size / 2, 16, 12),
-  ];
-  const geometry = geometries[Math.floor(Math.random() * geometries.length)];
-  const material = new THREE.MeshPhongMaterial({ color: 0xc7c7c7 });
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.castShadow = true;
+  const size = 0.15 + Math.random() * 0.35;
+  const color = SPAWN_COLORS[Math.floor(Math.random() * SPAWN_COLORS.length)];
+  const objectType = Math.floor(Math.random() * 7);
 
-  mesh.position.set(
+  let shape: JoltPhysics.Shape;
+  let geometry: THREE.BufferGeometry;
+
+  switch (objectType) {
+    case 0: { // Sphere
+      const radius = size / 2;
+      shape = new Jolt.SphereShape(radius);
+      geometry = new THREE.SphereGeometry(radius, 16, 12);
+      break;
+    }
+    case 1: { // Box
+      const h = size / 2;
+      shape = new Jolt.BoxShape(new Jolt.Vec3(h, h, h), 0.05 * h);
+      geometry = new THREE.BoxGeometry(size, size, size);
+      break;
+    }
+    case 2: { // Cylinder
+      const radius = size / 2;
+      const halfH = size / 2;
+      shape = new Jolt.CylinderShape(halfH, radius, 0.05);
+      geometry = new THREE.CylinderGeometry(radius, radius, size, 16);
+      break;
+    }
+    case 3: { // Capsule
+      const radius = size / 3;
+      const halfH = size / 3;
+      shape = new Jolt.CapsuleShape(halfH, radius);
+      geometry = new THREE.CapsuleGeometry(radius, halfH * 2, 8, 16);
+      break;
+    }
+    case 4: { // Convex hull — random point cloud
+      const hullSettings = new Jolt.ConvexHullShapeSettings();
+      for (let p = 0; p < 10; ++p) {
+        hullSettings.mPoints.push_back(new Jolt.Vec3(
+          (Math.random() - 0.5) * size,
+          (Math.random() - 0.5) * size,
+          (Math.random() - 0.5) * size,
+        ));
+      }
+      shape = hullSettings.Create().Get();
+      Jolt.destroy(hullSettings);
+      geometry = getThreeGeometryFromShape(shape);
+      break;
+    }
+    case 5: { // Tapered cylinder (cone-like)
+      const topRadius = size * 0.05;
+      const bottomRadius = size * 0.4;
+      const halfH = size * 0.35;
+      shape = new Jolt.TaperedCylinderShapeSettings(halfH, topRadius, bottomRadius).Create().Get();
+      geometry = getThreeGeometryFromShape(shape);
+      break;
+    }
+    case 6: { // Compound dumbbell (two spheres + capsule bar)
+      const r2 = size * 0.25;
+      const r1 = r2 * 0.4;
+      const l = size * 0.35;
+      const compoundSettings = new Jolt.StaticCompoundShapeSettings();
+      const barRot = Jolt.Quat.prototype.sRotation(new Jolt.Vec3(0, 0, 1), 0.5 * Math.PI);
+      compoundSettings.AddShape(new Jolt.Vec3(-l, 0, 0), Jolt.Quat.prototype.sIdentity(), new Jolt.SphereShapeSettings(r2), 1);
+      compoundSettings.AddShape(new Jolt.Vec3( l, 0, 0), Jolt.Quat.prototype.sIdentity(), new Jolt.SphereShapeSettings(r2), 2);
+      compoundSettings.AddShape(new Jolt.Vec3( 0, 0, 0), barRot, new Jolt.CapsuleShapeSettings(l, r1), 3);
+      shape = compoundSettings.Create().Get();
+      Jolt.destroy(compoundSettings);
+      geometry = getThreeGeometryFromShape(shape);
+      break;
+    }
+    default: {
+      const h = size / 2;
+      shape = new Jolt.BoxShape(new Jolt.Vec3(h, h, h), 0.05 * h);
+      geometry = new THREE.BoxGeometry(size, size, size);
+    }
+  }
+
+  const pos = new THREE.Vector3(
     (Math.random() - 0.5) * 8,
-    2 + Math.random() * 3,
+    -2,
     -1 + (Math.random() - 0.5) * 8
   );
+  const RandomQuaternion = new THREE.Quaternion().setFromEuler(
+    new THREE.Euler(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI)
+  );
+
+  const material = new THREE.MeshPhongMaterial({ color });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.castShadow = true;
+  mesh.position.copy(pos);
+  mesh.quaternion.copy(RandomQuaternion);
   scene!.add(mesh);
   spawnedMeshes.push(mesh);
-  addDynamicBody(mesh, 1, 0.4);
+
+  const creationSettings = new Jolt.BodyCreationSettings(
+    shape,
+    new Jolt.RVec3(pos.x, pos.y, pos.z),
+    new Jolt.Quat(RandomQuaternion.x, RandomQuaternion.y, RandomQuaternion.z, RandomQuaternion.w),
+    Jolt.EMotionType_Dynamic, LAYER_MOVING
+  );
+  creationSettings.mRestitution = 0.3;
+  const body = bodyInterface.CreateBody(creationSettings);
+  bodyInterface.AddBody(body.GetID(), Jolt.EActivation_Activate);
+  Jolt.destroy(creationSettings);
+  dynamicBodies.push({ mesh, body });
 }
 
 function startSpawning() {
@@ -368,32 +480,6 @@ function clearSpawnedMeshes() {
   spawnedMeshes.length = 0;
   clearInterval(spawnInterval);
   spawnInterval = undefined;
-}
-
-function addDynamicBody(mesh: THREE.Mesh, mass: number, restitution: number = 0) {
-  const params = (mesh.geometry as any).parameters;
-  let shape: any;
-  if (mesh.geometry.type === 'BoxGeometry') {
-    const sx = (params.width  ?? 1) / 2;
-    const sy = (params.height ?? 1) / 2;
-    const sz = (params.depth  ?? 1) / 2;
-    shape = new Jolt.BoxShape(new Jolt.Vec3(sx, sy, sz), 0.05 * Math.min(sx, sy, sz));
-  } else if (mesh.geometry.type === 'SphereGeometry') {
-    shape = new Jolt.SphereShape(params.radius ?? 0.5);
-  } else {
-    return;
-  }
-  const creationSettings = new Jolt.BodyCreationSettings(
-    shape,
-    new Jolt.RVec3(mesh.position.x, mesh.position.y, mesh.position.z),
-    new Jolt.Quat(mesh.quaternion.x, mesh.quaternion.y, mesh.quaternion.z, mesh.quaternion.w),
-    Jolt.EMotionType_Dynamic, LAYER_MOVING
-  );
-  creationSettings.mRestitution = restitution;
-  const body = bodyInterface.CreateBody(creationSettings);
-  bodyInterface.AddBody(body.GetID(), Jolt.EActivation_Activate);
-  Jolt.destroy(creationSettings);
-  dynamicBodies.push({ mesh, body });
 }
 
 main();

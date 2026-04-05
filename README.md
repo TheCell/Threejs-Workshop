@@ -58,7 +58,16 @@ This workshop uses Images and code provided by Three.js and JoltPhysics.
 # Project 2
 - OrbitCamera
 - Physics interaction
+    - Physics and Spawning is already added
 - Add-ons / Plugins
+
+## Camera
+1. Add OrbitCamera addon
+2. Setup Camera to move around the center
+
+## Physics interaction
+- Use the Jolt Physics to explode shapes where the cursor points
+
 ## Step by Step
 1. Add Orbit Controls
     - https://threejs.org/docs/?q=orbit#OrbitControls
