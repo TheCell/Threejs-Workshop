@@ -40,8 +40,9 @@ function main() {
   camera.lookAt(0, 0, 0);
 
   scene = new THREE.Scene();
-  const cube = addShapes(scene);
-  scene.add(cube);
+
+  addShapes(scene);
+
   renderer.render(scene, camera);
 
   addDirectionalLight(scene);
@@ -178,7 +179,111 @@ function addShapes(scene: THREE.Scene) {
   const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
   const material = new THREE.MeshBasicMaterial({color: 0x44aa88});
   cube = new THREE.Mesh(geometry, material);
-  return cube;
+  scene.add(cube);
+
+  // Sphere
+  const sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(0.5, 32, 16),
+    new THREE.MeshBasicMaterial({ color: 0xff6347 })
+  );
+  sphere.position.set(2, 0, 0);
+  scene.add(sphere);
+
+  // Cylinder
+  const cylinder = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.5, 0.5, 1, 32),
+    new THREE.MeshBasicMaterial({ color: 0x4169e1 })
+  );
+  cylinder.position.set(-2, 0, 0);
+  scene.add(cylinder);
+
+  // Cone
+  const cone = new THREE.Mesh(
+    new THREE.ConeGeometry(0.5, 1, 32),
+    new THREE.MeshBasicMaterial({ color: 0xffd700 })
+  );
+  cone.position.set(0, 0, 2);
+  scene.add(cone);
+
+  // Torus
+  const torus = new THREE.Mesh(
+    new THREE.TorusGeometry(0.4, 0.15, 16, 100),
+    new THREE.MeshBasicMaterial({ color: 0x9400d3 })
+  );
+  torus.position.set(2, 0, 2);
+  scene.add(torus);
+
+  // TorusKnot
+  const torusKnot = new THREE.Mesh(
+    new THREE.TorusKnotGeometry(0.4, 0.1, 100, 16),
+    new THREE.MeshBasicMaterial({ color: 0xff1493 })
+  );
+  torusKnot.position.set(-2, 0, 2);
+  scene.add(torusKnot);
+
+  // Plane
+  const plane = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 1),
+    new THREE.MeshBasicMaterial({ color: 0x00ced1, side: THREE.DoubleSide })
+  );
+  plane.position.set(0, 0, -2);
+  scene.add(plane);
+
+  // Circle
+  const circle = new THREE.Mesh(
+    new THREE.CircleGeometry(0.5, 32),
+    new THREE.MeshBasicMaterial({ color: 0xff8c00, side: THREE.DoubleSide })
+  );
+  circle.position.set(2, 0, -2);
+  scene.add(circle);
+
+  // Ring
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(0.3, 0.5, 32),
+    new THREE.MeshBasicMaterial({ color: 0x32cd32, side: THREE.DoubleSide })
+  );
+  ring.position.set(-2, 0, -2);
+  scene.add(ring);
+
+  // Dodecahedron
+  const dodecahedron = new THREE.Mesh(
+    new THREE.DodecahedronGeometry(0.5),
+    new THREE.MeshBasicMaterial({ color: 0x8b4513 })
+  );
+  dodecahedron.position.set(4, 0, 0);
+  scene.add(dodecahedron);
+
+  // Icosahedron
+  const icosahedron = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.5),
+    new THREE.MeshBasicMaterial({ color: 0x00bfff })
+  );
+  icosahedron.position.set(-4, 0, 0);
+  scene.add(icosahedron);
+
+  // Octahedron
+  const octahedron = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.5),
+    new THREE.MeshBasicMaterial({ color: 0xff4500 })
+  );
+  octahedron.position.set(4, 0, 2);
+  scene.add(octahedron);
+
+  // Tetrahedron
+  const tetrahedron = new THREE.Mesh(
+    new THREE.TetrahedronGeometry(0.5),
+    new THREE.MeshBasicMaterial({ color: 0xadff2f })
+  );
+  tetrahedron.position.set(-4, 0, 2);
+  scene.add(tetrahedron);
+
+  // Capsule
+  const capsule = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.3, 0.5, 4, 8),
+    new THREE.MeshBasicMaterial({ color: 0xda70d6 })
+  );
+  capsule.position.set(4, 0, -2);
+  scene.add(capsule);
 }
 
 main();
