@@ -38,6 +38,8 @@ function main() {
   }
 
   renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const fov = 75;
   const aspect = 2;
@@ -198,6 +200,7 @@ function setupGui() {
 function addDirectionalLight(scene: THREE.Scene) {
   light = new THREE.DirectionalLight(lightColor, lightIntensity);
   light.position.set(10, 10, 1);
+  light.castShadow = true;
   scene.add(light);
 
   ambientLight = new THREE.AmbientLight(0xFFFFFF, 1);
@@ -234,8 +237,10 @@ function createMeshFloor(n: number, cellSize: number, maxHeight: number, posX: n
   geometry.computeVertexNormals();
 
   const material = new THREE.MeshPhongMaterial({ color: 0xAAAAAA, side: THREE.DoubleSide });
+  
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.set(posX, posY, posZ);
+  mesh.receiveShadow = true;
   // scene!.add(mesh);
   return mesh;
 }
@@ -261,6 +266,7 @@ function spawnMesh() {
   const geometry = geometries[Math.floor(Math.random() * geometries.length)];
   const material = new THREE.MeshPhongMaterial({ color: 0xc7c7c7 });
   const mesh = new THREE.Mesh(geometry, material);
+  mesh.castShadow = true;
 
   mesh.position.set(
     (Math.random() - 0.5) * 8,
