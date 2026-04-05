@@ -10,12 +10,61 @@ stats.showPanel(displayDebug ? 0 : -1);
 document.body.appendChild(stats.dom);
 
 // Three.js stuff
-let cube: THREE.Mesh | undefined;
+let meshes: THREE.Mesh[] = [];
 let renderer: THREE.WebGLRenderer | undefined;
 let scene: THREE.Scene | undefined;
 let camera: THREE.PerspectiveCamera | undefined;
 
+let lightColor = 0xFFFFFF;
+let lightIntensity = 1;
+let lightAngle = 0;
+const lightRadius = 10;
+let light: THREE.DirectionalLight | undefined;
+let ambientLight: THREE.AmbientLight | undefined;
+let axesHelper: THREE.AxesHelper | undefined;
+let showAxes = false;
+let rotateObjects = true;
 
+const keysPressed = new Set<string>();
+window.addEventListener('keydown', (e) => keysPressed.add(e.code));
+window.addEventListener('keyup', (e) => keysPressed.delete(e.code));
+
+const cameraSpeed = 0.05;
+const cameraForward = new THREE.Vector3();
+const cameraRight = new THREE.Vector3();
+const up = new THREE.Vector3(0, 1, 0);
+
+function updateCamera() {
+  if (!camera) return;
+  camera.getWorldDirection(cameraForward);
+  cameraForward.y = 0;
+  cameraForward.normalize();
+  cameraRight.crossVectors(cameraForward, up).normalize();
+
+  if (keysPressed.has('KeyW')) {
+    camera.position.addScaledVector(cameraForward, cameraSpeed);
+  }
+
+  if (keysPressed.has('KeyS')) {
+    camera.position.addScaledVector(cameraForward, -cameraSpeed);
+  }
+
+  if (keysPressed.has('KeyA')) {
+    camera.position.addScaledVector(cameraRight, -cameraSpeed);
+  }
+
+  if (keysPressed.has('KeyD')) {
+    camera.position.addScaledVector(cameraRight, cameraSpeed);
+  }
+
+  if (keysPressed.has('KeyQ')) {
+    camera.position.y -= cameraSpeed;
+  }
+
+  if (keysPressed.has('KeyE')) {
+    camera.position.y += cameraSpeed;
+  }
+}
 
 function main() {
   const canvas = document.querySelector('#c');
@@ -24,23 +73,27 @@ function main() {
   }
 
   renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
+  renderer.shadowMap.enabled = true;
 
   const fov = 75;
   const aspect = 2;
   const near = 0.1;
-  const far = 5;
+  const far = 10;
   camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-  camera.position.z = 2;
+  camera.position.y = 1.8 ;
+  camera.position.z = 3.5;
+  camera.lookAt(0, -1, 0);
 
   scene = new THREE.Scene();
-  const boxWidth = 1;
-  const boxHeight = 1;
-  const boxDepth = 1;
-  const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
-  const material = new THREE.MeshBasicMaterial({color: 0x44aa88});
-  cube = new THREE.Mesh(geometry, material);
-  scene.add(cube);
+
+  addShapes(scene);
+
   renderer.render(scene, camera);
+
+  addDirectionalLight(scene);
+
+  setupGui();
+  requestAnimationFrame(render);
 }
 
 let lastRenderTime = 0;
@@ -49,6 +102,8 @@ let targetFrameDuration = 1000 / targetFps;
 function render(time: number) {
   stats.begin();
   animate(time);
+
+  updateCamera();
 
   if (resizeRendererToDisplaySize(renderer!)) {
     const canvas = renderer!.domElement;
@@ -74,11 +129,12 @@ function render(time: number) {
 function animate(time: number) {
   time *= 0.001;  // convert time to seconds
   
-  if (cube) {
-    cube.rotation.x = time;
-    cube.rotation.y = time;
+  if (rotateObjects) {
+    for (const mesh of meshes) {
+      mesh.rotation.x = time;
+      mesh.rotation.y = time;
+    }
   }
-  
 }
 
 function resizeRendererToDisplaySize(renderer: THREE.WebGLRenderer) {
@@ -95,28 +151,144 @@ function resizeRendererToDisplaySize(renderer: THREE.WebGLRenderer) {
   return needResize;
 }
 
-main();
-setupGui();
-requestAnimationFrame(render);
-
 function setupGui() {
   const gui = new GUI();
-  
-  const displayDebugController = gui.add({ displayDebug }, 'displayDebug')
+  const displayFolder = gui.addFolder('Display');
+
+  displayFolder.add({ displayDebug }, 'displayDebug')
     .name('Display Debug')
     .onChange((value: boolean) => {
       displayDebug = value;
       stats.showPanel(displayDebug ? 0 : -1); // 0: fps, 1: ms, 2: mb, 3+: custom
     });
 
-  const limitFpsController = gui.add({ limitFps }, 'limitFps')
+  displayFolder.add({ limitFps }, 'limitFps')
     .name('Limit FPS')
     .onChange((value: boolean) => {
       limitFps = value;
     });
 
-  const cubeFolder = gui.addFolder('Cube');
-  cubeFolder.add(cube!.position, 'x', -2, 2);
-  cubeFolder.add(cube!.position, 'y', -2, 2);
-  cubeFolder.open();
+  displayFolder.add({ rotateObjects }, 'rotateObjects')
+    .name('Rotate Objects')
+    .onChange((value: boolean) => {
+      rotateObjects = value;
+    });
+
+  displayFolder.add({ showAxes }, 'showAxes')
+    .name('Axes Helper')
+    .onChange((value: boolean) => {
+      showAxes = value;
+      if (showAxes) {
+        axesHelper = new THREE.AxesHelper(1);
+        scene!.add(axesHelper);
+      } else if (axesHelper) {
+        scene!.remove(axesHelper);
+        axesHelper.dispose();
+        axesHelper = undefined;
+      }
+    });
+    
+  // add  light parameters in a folder
+  const lightFolder = gui.addFolder('Light');
+  lightFolder.addColor({ color: lightColor }, 'color')
+    .name('Color')
+    .onChange((value: number) => {
+      lightColor = value;
+      if (light) {
+        light.color.setHex(lightColor);
+      }
+      if (ambientLight) {
+        ambientLight.color.setHex(lightColor);
+      }
+    });
+
+  lightFolder.add({ intensity: lightIntensity }, 'intensity', 0, 4)
+    .name('Intensity')
+    .onChange((value: number) => {
+      lightIntensity = value;
+      if (light) {
+        light.intensity = lightIntensity;
+      }
+    });
+
+  lightFolder.add({ angle: lightAngle }, 'angle', 0, 2 * Math.PI)
+    .name('Angle')
+    .onChange((value: number) => {
+      lightAngle = value;
+      if (light) {
+        light.position.set(Math.cos(lightAngle) * lightRadius, 10, Math.sin(lightAngle) * lightRadius);
+      }
+    });
+
 }
+
+function addDirectionalLight(scene: THREE.Scene) {
+  light = new THREE.DirectionalLight(lightColor, lightIntensity);
+  light.position.set(Math.cos(lightAngle) * lightRadius, 10, Math.sin(lightAngle) * lightRadius);
+  light.castShadow = true;
+  scene.add(light);
+
+  ambientLight = new THREE.AmbientLight(0xFFFFFF, 1);
+  scene.add(ambientLight);
+}
+
+function addShapes(scene: THREE.Scene) {
+  const materialNames = [
+    'basicMaterial',
+    'normalMaterial',
+    'phongMaterial',
+  ] as const;
+  const colors = [
+    0x44aa88, 0xff6347, 0x4169e1, 0xffd700, 0x9400d3,
+    0xff1493, 0x00ced1, 0xff8c00, 0x32cd32, 0x8b4513,
+    0x00bfff, 0xff4500, 0xadff2f, 0xda70d6,
+  ];
+
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      let materialName: 'basicMaterial' | 'normalMaterial' | 'phongMaterial';
+      if (i === 1 && j === 1) {
+        materialName = 'normalMaterial';
+      } else if (i === 0) {
+        materialName = 'basicMaterial';
+      } else {
+        materialName = 'phongMaterial';
+      }
+      const torusKnot = new THREE.Mesh(new THREE.TorusKnotGeometry(0.3, 0.08, 100, 16), getMeshByName(materialName, colors[i * 3 + j]));
+      torusKnot.position.set(-2 + i * 2, 0, 2 - j * 2);
+      torusKnot.castShadow = true;
+      scene.add(torusKnot);
+      meshes.push(torusKnot);
+    }
+  }
+
+  const planeGeo = new THREE.PlaneGeometry(10, 10);
+  const planeMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
+  const plane = new THREE.Mesh(planeGeo, planeMat);
+  plane.rotation.x = -Math.PI / 2;
+  plane.position.y = -0.5;
+  plane.receiveShadow = true;
+  scene.add(plane);
+}
+
+function getMeshByName(
+  meshname:
+    | 'basicMaterial'
+    | 'normalMaterial'
+    | 'phongMaterial',
+  color: THREE.ColorRepresentation
+) {
+  switch (meshname) {
+    case 'basicMaterial':
+      return new THREE.MeshBasicMaterial({ color });
+    case 'normalMaterial':
+      return new THREE.MeshNormalMaterial();
+    case 'phongMaterial':
+      return new THREE.MeshPhongMaterial({ color });
+    default:
+      console.warn(`Unknown mesh name: ${meshname}, using basic material as default.`);
+      return new THREE.MeshBasicMaterial({ color });
+  }
+}
+
+main();
