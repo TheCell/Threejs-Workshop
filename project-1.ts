@@ -33,17 +33,14 @@ function main() {
   const fov = 75;
   const aspect = 2;
   const near = 0.1;
-  const far = 5;
+  const far = 10;
   camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-  camera.position.z = 2;
+  camera.position.y = 4 ;
+  camera.position.z = 4;
+  camera.lookAt(0, 0, 0);
 
   scene = new THREE.Scene();
-  const boxWidth = 1;
-  const boxHeight = 1;
-  const boxDepth = 1;
-  const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
-  const material = new THREE.MeshBasicMaterial({color: 0x44aa88});
-  cube = new THREE.Mesh(geometry, material);
+  const cube = addShapes(scene);
   scene.add(cube);
   renderer.render(scene, camera);
 
@@ -88,7 +85,6 @@ function animate(time: number) {
     cube.rotation.x = time;
     cube.rotation.y = time;
   }
-  
 }
 
 function resizeRendererToDisplaySize(renderer: THREE.WebGLRenderer) {
@@ -107,7 +103,6 @@ function resizeRendererToDisplaySize(renderer: THREE.WebGLRenderer) {
 
 function setupGui() {
   const gui = new GUI();
-  
   const displayFolder = gui.addFolder('Display');
 
   displayFolder.add({ displayDebug }, 'displayDebug')
@@ -174,6 +169,16 @@ function addDirectionalLight(scene: THREE.Scene) {
 
   ambientLight = new THREE.AmbientLight(0xFFFFFF, 1);
   scene.add(ambientLight);
+}
+
+function addShapes(scene: THREE.Scene) {
+  const boxWidth = 1;
+  const boxHeight = 1;
+  const boxDepth = 1;
+  const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
+  const material = new THREE.MeshBasicMaterial({color: 0x44aa88});
+  cube = new THREE.Mesh(geometry, material);
+  return cube;
 }
 
 main();
