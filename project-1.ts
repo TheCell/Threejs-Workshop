@@ -24,19 +24,28 @@ let ambientLight: THREE.AmbientLight | undefined;
 let axesHelper: THREE.AxesHelper | undefined;
 let showAxes = false;
 let rotateObjects = true;
-let pickColor = 0x00FF00;
-let basicColor = 0xFF0000;
+let basicColor = 0x7492b1;
+let highlightColor = 0xf4b61a;
+let pickColor = 0xf4231f;
 
 const keysPressed = new Set<string>();
 window.addEventListener('keydown', (e) => keysPressed.add(e.code));
 window.addEventListener('keyup', (e) => keysPressed.delete(e.code));
+let isPointerDown = false;
+window.addEventListener('pointerdown', (e) => {
+  isPointerDown = true;
+});
+window.addEventListener('pointerup', (e) => {
+  isPointerDown = false;
+});
 
 const cameraSpeed = 0.05;
 const cameraForward = new THREE.Vector3();
 const cameraRight = new THREE.Vector3();
 const up = new THREE.Vector3(0, 1, 0);
+const highlightMaterial = new THREE.MeshStandardMaterial({ color: highlightColor });
 const pickMaterial = new THREE.MeshStandardMaterial({ color: pickColor });
-const normalMaterial = new THREE.MeshStandardMaterial({ color: basicColor });
+const originalMaterials = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
 
 function updateCamera() {
   if (!camera) return;
@@ -114,9 +123,18 @@ const raycaster = new THREE.Raycaster();
 function handleInteraction() {
   raycaster.setFromCamera(normalizedPointerPosition, camera!);
   const intersects = raycaster.intersectObjects(meshes);
+  const hitMesh = intersects[0]?.object as THREE.Mesh | undefined;
 
   for (const mesh of meshes) {
-    (mesh.material as THREE.MeshStandardMaterial).color.setHex(mesh === intersects[0]?.object ? pickColor : basicColor);
+    if (mesh === hitMesh) {
+      if (!originalMaterials.has(mesh)) {
+        originalMaterials.set(mesh, mesh.material);
+      }
+      mesh.material = isPointerDown ? pickMaterial : highlightMaterial;
+    } else if (originalMaterials.has(mesh)) {
+      mesh.material = originalMaterials.get(mesh)!;
+      originalMaterials.delete(mesh);
+    }
   }
 }
 
@@ -214,6 +232,25 @@ function setupGui() {
       }
     });
     
+  const materialFolder = gui.addFolder('Material');
+  materialFolder.addColor({ basicColor }, 'basicColor')
+    .name('Basic Color')
+    .onChange((value: number) => {
+      basicColor = value;
+    });
+
+  materialFolder.addColor({ highlightColor }, 'highlightColor')
+    .name('Highlight Color')
+    .onChange((value: number) => {
+      highlightColor = value;
+    });
+
+  materialFolder.addColor({ pickColor }, 'pickColor')
+    .name('Pick Color')
+    .onChange((value: number) => {
+      pickColor = value;
+    });
+
   // add  light parameters in a folder
   const lightFolder = gui.addFolder('Light');
   lightFolder.addColor({ color: lightColor }, 'color')
@@ -270,7 +307,7 @@ function addFloor(scene: THREE.Scene) {
 
 function addShapes(scene: THREE.Scene) {
   const geometry = new THREE.TorusKnotGeometry(0.5, 0.2, 100, 16);
-  const material = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
+  const material = new THREE.MeshStandardMaterial({ color: basicColor });
   const mesh = new THREE.Mesh(geometry, material);
   mesh.castShadow = true;
   scene.add(mesh);
