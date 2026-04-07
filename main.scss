@@ -1,3 +1,10 @@
+@font-face {
+  font-family: 'Montserrat';
+  src: url('./Montserrat-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 $color-background: #2d2f3b;
 $color-font: #d4dfd4;
 $color-dark: #2f383f;
@@ -6,6 +13,7 @@ $color-highlight: #f4231f;
 $color-highlight-2: #f4b61a;
 
 html {
+  font-family: 'Montserrat', sans-serif;
   background-color: $color-background;
   color: $color-font;
   margin: 0;
