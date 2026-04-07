@@ -77,8 +77,8 @@ function main() {
 
   const fov = 75;
   const aspect = 2;
-  const near = 0.1;
-  const far = 10;
+  const near = 0.01;
+  const far = 50;
   camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
   camera.position.y = 1.8 ;
   camera.position.z = 3.5;

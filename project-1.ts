@@ -78,8 +78,8 @@ function main() {
 
   const fov = 75;
   const aspect = 2;
-  const near = 0.1;
-  const far = 10;
+  const near = 0.01;
+  const far = 50;
   camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
   camera.position.y = 4 ;
   camera.position.z = 4;
@@ -87,11 +87,11 @@ function main() {
 
   scene = new THREE.Scene();
 
-  addShapes(scene);
-
   renderer.render(scene, camera);
 
   addDirectionalLight(scene);
+  addFloor(scene);
+  addShapes(scene);
 
   setupGui();
   requestAnimationFrame(render);
@@ -220,7 +220,6 @@ function setupGui() {
         light.position.set(Math.cos(lightAngle) * lightRadius, 10, Math.sin(lightAngle) * lightRadius);
       }
     });
-
 }
 
 function addDirectionalLight(scene: THREE.Scene) {
@@ -233,63 +232,25 @@ function addDirectionalLight(scene: THREE.Scene) {
   scene.add(ambientLight);
 }
 
+function addFloor(scene: THREE.Scene) {
+  const floorSize = 10;
+  const floorGeometry = new THREE.PlaneGeometry(floorSize, floorSize);
+  const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.8 });
+  const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+  floor.position.y = -1;
+  floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
+  scene.add(floor);
+}
+
 function addShapes(scene: THREE.Scene) {
-  const materialNames = [
-    'basicMaterial',
-    'normalMaterial',
-    'phongMaterial',
-  ] as const;
-  const colors = [
-    0x44aa88, 0xff6347, 0x4169e1, 0xffd700, 0x9400d3,
-    0xff1493, 0x00ced1, 0xff8c00, 0x32cd32, 0x8b4513,
-    0x00bfff, 0xff4500, 0xadff2f, 0xda70d6,
-  ];
-
-  for (let i = 0; i < 3; i++) {
-    for (let j = 0; j < 3; j++) {
-      let materialName: 'basicMaterial' | 'normalMaterial' | 'phongMaterial';
-      if (i === 1 && j === 1) {
-        materialName = 'normalMaterial';
-      } else if (i === 0) {
-        materialName = 'basicMaterial';
-      } else {
-        materialName = 'phongMaterial';
-      }
-      const torusKnot = new THREE.Mesh(new THREE.TorusKnotGeometry(0.3, 0.08, 100, 16), getMeshByName(materialName, colors[i * 3 + j]));
-      torusKnot.position.set(-2 + i * 2, 0, 2 - j * 2);
-      torusKnot.castShadow = true;
-      scene.add(torusKnot);
-      meshes.push(torusKnot);
-    }
-  }
-
-  const planeGeo = new THREE.PlaneGeometry(10, 10);
-  const planeMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
-  const plane = new THREE.Mesh(planeGeo, planeMat);
-  plane.rotation.x = -Math.PI / 2;
-  plane.position.y = -0.5;
-  plane.receiveShadow = true;
-  scene.add(plane);
+  const geometry = new THREE.TorusKnotGeometry(0.5, 0.2, 100, 16);
+  const material = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.castShadow = true;
+  scene.add(mesh);
+  meshes.push(mesh);
 }
 
-function getMeshByName(
-  meshname:
-    | 'basicMaterial'
-    | 'normalMaterial'
-    | 'phongMaterial',
-  color: THREE.ColorRepresentation
-) {
-  switch (meshname) {
-    case 'basicMaterial':
-      return new THREE.MeshBasicMaterial({ color });
-    case 'normalMaterial':
-      return new THREE.MeshNormalMaterial();
-    case 'phongMaterial':
-      return new THREE.MeshPhongMaterial({ color });
-    default:
-      console.warn(`Unknown mesh name: ${meshname}, using basic material as default.`);
-      return new THREE.MeshBasicMaterial({ color });
-  }
-}
 
 main();
