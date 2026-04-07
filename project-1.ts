@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import GUI from 'lil-gui';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 let displayDebug = false;
 let limitFps = true;
@@ -32,13 +33,13 @@ const keysPressed = new Set<string>();
 window.addEventListener('keydown', (e) => keysPressed.add(e.code));
 window.addEventListener('keyup', (e) => keysPressed.delete(e.code));
 let isPointerDown = false;
-let draggedMesh: THREE.Mesh | null = null;
+let draggedGroup: THREE.Object3D | null = null;
 window.addEventListener('pointerdown', (e) => {
   isPointerDown = true;
 });
 window.addEventListener('pointerup', (e) => {
   isPointerDown = false;
-  draggedMesh = null;
+  draggedGroup = null;
 });
 
 const cameraSpeed = 0.05;
@@ -48,6 +49,7 @@ const up = new THREE.Vector3(0, 1, 0);
 const highlightMaterial = new THREE.MeshStandardMaterial({ color: highlightColor });
 const pickMaterial = new THREE.MeshStandardMaterial({ color: pickColor });
 const originalMaterials = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
+const meshToGroup = new Map<THREE.Mesh, THREE.Object3D>();
 
 function updateCamera() {
   if (!camera) return;
@@ -130,23 +132,26 @@ function handleInteraction() {
   raycaster.setFromCamera(normalizedPointerPosition, camera!);
   const intersects = raycaster.intersectObjects(meshes);
   const hitMesh = intersects[0]?.object as THREE.Mesh | undefined;
+  const hitGroup = hitMesh ? meshToGroup.get(hitMesh) ?? hitMesh : undefined;
 
-  if (isPointerDown && !draggedMesh && hitMesh) {
-    draggedMesh = hitMesh;
-    dragOffsetY = hitMesh.position.y;
+  if (isPointerDown && !draggedGroup && hitGroup) {
+    draggedGroup = hitGroup;
+    dragOffsetY = hitGroup.position.y;
   }
 
-  if (isPointerDown && draggedMesh) {
+  if (isPointerDown && draggedGroup) {
     if (raycaster.ray.intersectPlane(dragPlane, dragIntersection)) {
-      draggedMesh.position.x = dragIntersection.x;
-      draggedMesh.position.z = dragIntersection.z;
-      draggedMesh.position.y = dragOffsetY;
+      draggedGroup.position.x = dragIntersection.x;
+      draggedGroup.position.z = dragIntersection.z;
+      draggedGroup.position.y = dragOffsetY;
     }
   }
 
-  const activeMesh = draggedMesh ?? hitMesh;
+  const activeGroup = draggedGroup ?? hitGroup;
+  const activeMeshes = activeGroup ? getMeshesInGroup(activeGroup) : [];
+
   for (const mesh of meshes) {
-    if (mesh === activeMesh) {
+    if (activeMeshes.includes(mesh)) {
       if (!originalMaterials.has(mesh)) {
         originalMaterials.set(mesh, mesh.material);
       }
@@ -194,9 +199,10 @@ function animate(time: number) {
   time *= 0.001;  // convert time to seconds
   
   if (rotateObjects) {
-    for (const mesh of meshes) {
-      mesh.rotation.x = time;
-      mesh.rotation.y = time;
+    const groups = new Set(meshToGroup.values());
+    for (const group of groups) {
+      group.rotation.x = time;
+      group.rotation.y = time;
     }
   }
 }
@@ -271,6 +277,9 @@ function setupGui() {
       pickColor = value;
     });
 
+  const importFolder = gui.addFolder('Import');
+  importFolder.add({ loadModel: () => importModel() }, 'loadModel').name('Load GLTF/GLB');
+
   // add  light parameters in a folder
   const lightFolder = gui.addFolder('Light');
   lightFolder.addColor({ color: lightColor }, 'color')
@@ -325,6 +334,40 @@ function addFloor(scene: THREE.Scene) {
   scene.add(floor);
 }
 
+const gltfLoader = new GLTFLoader();
+
+function getMeshesInGroup(group: THREE.Object3D): THREE.Mesh[] {
+  return meshes.filter((m) => meshToGroup.get(m) === group);
+}
+
+function importModel() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.glb,.gltf';
+  input.onchange = () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    gltfLoader.load(url, (gltf) => {
+      const model = gltf.scene;
+      console.log(model);
+      
+      model.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          meshes.push(mesh);
+          meshToGroup.set(mesh, model);
+        }
+      });
+      scene!.add(model);
+      URL.revokeObjectURL(url);
+    });
+  };
+  input.click();
+}
+
 function addShapes(scene: THREE.Scene) {
   const geometry = new THREE.TorusKnotGeometry(0.5, 0.2, 100, 16);
   const material = new THREE.MeshStandardMaterial({ color: basicColor });
@@ -332,6 +375,7 @@ function addShapes(scene: THREE.Scene) {
   mesh.castShadow = true;
   scene.add(mesh);
   meshes.push(mesh);
+  meshToGroup.set(mesh, mesh);
 }
 
 
