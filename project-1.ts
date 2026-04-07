@@ -32,11 +32,13 @@ const keysPressed = new Set<string>();
 window.addEventListener('keydown', (e) => keysPressed.add(e.code));
 window.addEventListener('keyup', (e) => keysPressed.delete(e.code));
 let isPointerDown = false;
+let draggedMesh: THREE.Mesh | null = null;
 window.addEventListener('pointerdown', (e) => {
   isPointerDown = true;
 });
 window.addEventListener('pointerup', (e) => {
   isPointerDown = false;
+  draggedMesh = null;
 });
 
 const cameraSpeed = 0.05;
@@ -120,13 +122,31 @@ function onPointerMove(event: PointerEvent) {
 }
 
 const raycaster = new THREE.Raycaster();
+const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1);
+const dragIntersection = new THREE.Vector3();
+let dragOffsetY = 0;
+
 function handleInteraction() {
   raycaster.setFromCamera(normalizedPointerPosition, camera!);
   const intersects = raycaster.intersectObjects(meshes);
   const hitMesh = intersects[0]?.object as THREE.Mesh | undefined;
 
+  if (isPointerDown && !draggedMesh && hitMesh) {
+    draggedMesh = hitMesh;
+    dragOffsetY = hitMesh.position.y;
+  }
+
+  if (isPointerDown && draggedMesh) {
+    if (raycaster.ray.intersectPlane(dragPlane, dragIntersection)) {
+      draggedMesh.position.x = dragIntersection.x;
+      draggedMesh.position.z = dragIntersection.z;
+      draggedMesh.position.y = dragOffsetY;
+    }
+  }
+
+  const activeMesh = draggedMesh ?? hitMesh;
   for (const mesh of meshes) {
-    if (mesh === hitMesh) {
+    if (mesh === activeMesh) {
       if (!originalMaterials.has(mesh)) {
         originalMaterials.set(mesh, mesh.material);
       }
