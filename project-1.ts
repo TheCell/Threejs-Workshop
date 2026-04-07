@@ -24,6 +24,8 @@ let ambientLight: THREE.AmbientLight | undefined;
 let axesHelper: THREE.AxesHelper | undefined;
 let showAxes = false;
 let rotateObjects = true;
+let pickColor = 0x00FF00;
+let basicColor = 0xFF0000;
 
 const keysPressed = new Set<string>();
 window.addEventListener('keydown', (e) => keysPressed.add(e.code));
@@ -33,6 +35,8 @@ const cameraSpeed = 0.05;
 const cameraForward = new THREE.Vector3();
 const cameraRight = new THREE.Vector3();
 const up = new THREE.Vector3(0, 1, 0);
+const pickMaterial = new THREE.MeshStandardMaterial({ color: pickColor });
+const normalMaterial = new THREE.MeshStandardMaterial({ color: basicColor });
 
 function updateCamera() {
   if (!camera) return;
@@ -88,6 +92,7 @@ function main() {
   scene = new THREE.Scene();
 
   renderer.render(scene, camera);
+  renderer.domElement.addEventListener( 'pointermove', onPointerMove );
 
   addDirectionalLight(scene);
   addFloor(scene);
@@ -95,6 +100,24 @@ function main() {
 
   setupGui();
   requestAnimationFrame(render);
+}
+
+let normalizedPointerPosition = new THREE.Vector2();
+function onPointerMove(event: PointerEvent) {
+  const canvas = renderer!.domElement;
+  const x = (event.offsetX / canvas.clientWidth) * 2 - 1;
+  const y = (event.offsetY / canvas.clientHeight) * 2 - 1;
+  normalizedPointerPosition.set(x, -y);
+}
+
+const raycaster = new THREE.Raycaster();
+function handleInteraction() {
+  raycaster.setFromCamera(normalizedPointerPosition, camera!);
+  const intersects = raycaster.intersectObjects(meshes);
+
+  for (const mesh of meshes) {
+    (mesh.material as THREE.MeshStandardMaterial).color.setHex(mesh === intersects[0]?.object ? pickColor : basicColor);
+  }
 }
 
 let lastRenderTime = 0;
@@ -111,6 +134,8 @@ function render(time: number) {
     camera!.aspect = canvas.clientWidth / canvas.clientHeight;
     camera!.updateProjectionMatrix();
   }
+
+  handleInteraction();
   
   renderer!.render(scene!, camera!);
   if (!limitFps) {
