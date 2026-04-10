@@ -200,8 +200,11 @@ function animate(time: number) {
   
   if (rotateObjects) {
     const groups = new Set(meshToGroup.values());
-    for (const group of groups) {
-      group.rotation.x = time;
+    for (let i = 0; i < groups.size; i++) {
+      const group = Array.from(groups)[i];
+      if (i === 0) {
+        group.rotation.x = time;
+      }
       group.rotation.y = time;
     }
   }
