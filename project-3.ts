@@ -29,6 +29,36 @@ const keysPressed = new Set<string>();
 window.addEventListener('keydown', (e) => keysPressed.add(e.code));
 window.addEventListener('keyup', (e) => keysPressed.delete(e.code));
 
+const uniforms = {
+  iTime: { value: 0 },
+  iResolution: { value: new THREE.Vector3() },
+};
+
+const vertexShader = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const fragmentShader = `
+#include <common>
+
+uniform vec3 iResolution;
+uniform float iTime;
+
+void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
+  vec2 uv = fragCoord/iResolution.xy;
+  vec3 col = 0.5 + 0.5*cos(iTime+uv.xyx+vec3(0,2,4));
+  fragColor = vec4(col,1.0);
+}
+
+void main() {
+  mainImage(gl_FragColor, gl_FragCoord.xy);
+}
+`;
+
 const cameraSpeed = 0.05;
 const cameraForward = new THREE.Vector3();
 const cameraRight = new THREE.Vector3();
@@ -135,6 +165,9 @@ function animate(time: number) {
       mesh.rotation.y = time;
     }
   }
+
+  uniforms.iResolution.value.set(renderer!.domElement.width, renderer!.domElement.height, 1);
+  uniforms.iTime.value = time;
 }
 
 function resizeRendererToDisplaySize(renderer: THREE.WebGLRenderer) {
@@ -233,33 +266,23 @@ function addDirectionalLight(scene: THREE.Scene) {
 }
 
 function addShapes(scene: THREE.Scene) {
-  const materialNames = [
-    'basicMaterial',
-    'normalMaterial',
-    'phongMaterial',
-  ] as const;
-  const colors = [
-    0x44aa88, 0xff6347, 0x4169e1, 0xffd700, 0x9400d3,
-    0xff1493, 0x00ced1, 0xff8c00, 0x32cd32, 0x8b4513,
-    0x00bfff, 0xff4500, 0xadff2f, 0xda70d6,
-  ];
-
   for (let i = 0; i < 3; i++) {
-    for (let j = 0; j < 3; j++) {
-      let materialName: 'basicMaterial' | 'normalMaterial' | 'phongMaterial';
-      if (i === 1 && j === 1) {
-        materialName = 'normalMaterial';
-      } else if (i === 0) {
-        materialName = 'basicMaterial';
-      } else {
-        materialName = 'phongMaterial';
-      }
-      const torusKnot = new THREE.Mesh(new THREE.TorusKnotGeometry(0.3, 0.08, 100, 16), getMeshByName(materialName, colors[i * 3 + j]));
-      torusKnot.position.set(-2 + i * 2, 0, 2 - j * 2);
-      torusKnot.castShadow = true;
-      scene.add(torusKnot);
-      meshes.push(torusKnot);
+    let materialName: 'normalMaterial' | 'phongMaterial' | 'shaderMaterial';
+    if (i === 0) {
+      materialName = 'normalMaterial';
+    } else if (i === 1) {
+      materialName = 'shaderMaterial';
+    } else {
+      materialName = 'phongMaterial';
     }
+
+    const material = getMeshByName(materialName, 0x4169e1);
+
+    const torusKnot = new THREE.Mesh(new THREE.TorusKnotGeometry(0.3, 0.08, 100, 16), material);
+    torusKnot.position.set(-2 + i * 2, 0, 2 - 1 * 2);
+    torusKnot.castShadow = true;
+    scene.add(torusKnot);
+    meshes.push(torusKnot);
   }
 
   const planeGeo = new THREE.PlaneGeometry(10, 10);
@@ -273,18 +296,22 @@ function addShapes(scene: THREE.Scene) {
 
 function getMeshByName(
   meshname:
-    | 'basicMaterial'
     | 'normalMaterial'
-    | 'phongMaterial',
+    | 'phongMaterial'
+    | 'shaderMaterial',
   color: THREE.ColorRepresentation
-) {
+): THREE.MeshNormalMaterial | THREE.MeshPhongMaterial | THREE.MeshBasicMaterial | THREE.ShaderMaterial {
   switch (meshname) {
-    case 'basicMaterial':
-      return new THREE.MeshBasicMaterial({ color });
     case 'normalMaterial':
       return new THREE.MeshNormalMaterial();
     case 'phongMaterial':
       return new THREE.MeshPhongMaterial({ color });
+    case 'shaderMaterial':
+      return new THREE.ShaderMaterial({
+        vertexShader,
+        fragmentShader,
+        uniforms,
+      });
     default:
       console.warn(`Unknown mesh name: ${meshname}, using basic material as default.`);
       return new THREE.MeshBasicMaterial({ color });

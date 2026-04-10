@@ -366,8 +366,6 @@ function importModel() {
             mesh.receiveShadow = true;
             meshes.push(mesh);
             meshToGroup.set(mesh, model);
-            console.log(mesh.material);
-            
           }
         });
         scene!.add(model);
