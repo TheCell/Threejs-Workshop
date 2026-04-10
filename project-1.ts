@@ -349,24 +349,31 @@ function importModel() {
   input.accept = '.glb,.gltf';
   input.onchange = () => {
     const file = input.files?.[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    gltfLoader.load(url, (gltf) => {
-      const model = gltf.scene;
-      console.log(model);
-      
-      model.traverse((child) => {
-        if ((child as THREE.Mesh).isMesh) {
-          const mesh = child as THREE.Mesh;
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          meshes.push(mesh);
-          meshToGroup.set(mesh, model);
-        }
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const data = event.target!.result as ArrayBuffer;
+      gltfLoader.parse(data, '/GLB format/', (gltf) => {
+        const model = gltf.scene;
+        
+        model.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            const mesh = child as THREE.Mesh;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            meshes.push(mesh);
+            meshToGroup.set(mesh, model);
+            console.log(mesh.material);
+            
+          }
+        });
+        scene!.add(model);
       });
-      scene!.add(model);
-      URL.revokeObjectURL(url);
-    });
+    };
+    reader.readAsArrayBuffer(file);
   };
   input.click();
 }
