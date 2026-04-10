@@ -74,3 +74,7 @@ This workshop uses Images and code provided by Three.js and JoltPhysics.
 
 # Project 3
 - Write your own Shader
+- try to color your shape differently
+- try to manipulate the vertex points
+- try using your mouse vector as an input
+- take a look at https://www.shadertoy.com/ and https://fragcoord.xyz/explore for more shader ideas

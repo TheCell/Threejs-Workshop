@@ -29,19 +29,36 @@ const keysPressed = new Set<string>();
 window.addEventListener('keydown', (e) => keysPressed.add(e.code));
 window.addEventListener('keyup', (e) => keysPressed.delete(e.code));
 
+
+// take a look at https://www.shadertoy.com/ and https://fragcoord.xyz/explore for more shader ideas
+
 const uniforms = {
   iTime: { value: 0 },
   iResolution: { value: new THREE.Vector3() },
 };
 
+// vertex shader can manipulate the geometry of the object.
 const vertexShader = `
+  uniform vec3 iResolution;
+  uniform float iTime;
+
   varying vec2 vUv;
+
+  float triangleWave(float x) {
+    return abs(fract(x) * 2.0 - 1.0);
+  }
+
   void main() {
     vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vec4 myPosition = vec4(position, 1.0);
+    myPosition.y += sin(triangleWave(iTime) * myPosition.y * 0.2);
+    myPosition.x += sin(triangleWave(iTime) * myPosition.x * 0.2);
+    myPosition.z += sin(triangleWave(iTime) * myPosition.z * 0.2);
+    gl_Position = projectionMatrix * modelViewMatrix * myPosition;
   }
 `;
 
+// fragment shader can manipulate the color of each pixel of the object.
 const fragmentShader = `
 #include <common>
 
