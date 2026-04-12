@@ -2,12 +2,11 @@ import * as THREE from 'three';
 import GUI from 'lil-gui';
 import Stats from 'three/addons/libs/stats.module.js';
 import { ImprovedNoise } from 'three/addons/math/ImprovedNoise.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import JoltPhysics from 'jolt-physics/wasm';
 
 const improvedNoise = new ImprovedNoise();
 const Jolt = await JoltPhysics();
-
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 let displayDebug = false;
 let limitFps = true;
@@ -17,7 +16,6 @@ let stats = new Stats();
 stats.showPanel(displayDebug ? 0 : -1);
 document.body.appendChild(stats.dom);
 
-// Three.js stuff
 let renderer: THREE.WebGLRenderer | undefined;
 let scene: THREE.Scene | undefined;
 let camera: THREE.PerspectiveCamera | undefined;
@@ -33,19 +31,15 @@ let showAxes = false;
 const spawnedMeshes: THREE.Mesh[] = [];
 let spawnInterval: ReturnType<typeof setInterval> | undefined;
 
-// Jolt physics (direct — no THREE.js addon wrapper)
+let EXPLOSION_RADIUS   = 2;
+let EXPLOSION_STRENGTH = 36;
 const LAYER_NON_MOVING = 0;
 const LAYER_MOVING = 1;
-// let Jolt: any = null;
 let joltInterface: any = null;
 let bodyInterface: any = null;
 const dynamicBodies: Array<{ mesh: THREE.Mesh; body: any }> = [];
 
-const KILL_Y = -12; // anything below this Y is removed and respawned
-
-// const { default: initJolt } = await import(/* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/jolt-physics@1.0.0/dist/jolt-physics.wasm-compat.js');
-// Jolt = await initJolt();
-
+const KILL_Y = -12;
 
 const _joltSettings = new Jolt.JoltSettings();
 const _objectFilter = new Jolt.ObjectLayerPairFilterTable(2);
@@ -67,10 +61,9 @@ setInterval(() => { joltInterface.Step(1 / 60, 1); }, 1000 / 60);
 
 let floorMesh: THREE.Mesh | undefined;
 
-// Point light that flashes at the explosion hit position
 let explosionLight: THREE.PointLight | undefined;
 let explosionLightBorn = -Infinity;
-const EXPLOSION_LIGHT_DURATION = 0.6; // seconds
+const EXPLOSION_LIGHT_DURATION_IN_SECONDS = 0.6;
 const EXPLOSION_LIGHT_INTENSITY = 80;
 function main() {
   const canvas = document.querySelector('#c');
@@ -82,6 +75,8 @@ function main() {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
+  scene = new THREE.Scene();
+
   const fov = 75;
   const aspect = 2;
   const near = 0.01;
@@ -89,20 +84,16 @@ function main() {
   camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
   camera.position.z = 2;
 
-  scene = new THREE.Scene();
-
   const floor = createMeshFloor(50, 0.5, 1, 0, -4, -1);
   floorMesh = floor;
   scene.add(floor);
 
-  // Kill floor — wide grid rendered with lines, sits below the terrain
   const killFloorGrid = new THREE.GridHelper(80, 40, 0xff2200, 0xff4400);
   killFloorGrid.position.set(0, KILL_Y, -1);
   scene.add(killFloorGrid);
 
-  addDirectionalLight(scene);
+  addLight(scene);
 
-  // Explosion point light — starts off, teleports to each hit and fades
   explosionLight = new THREE.PointLight(0xff6600, 0, EXPLOSION_RADIUS * 3);
   explosionLight.castShadow = true;
   scene.add(explosionLight);
@@ -166,11 +157,7 @@ function onCanvasClick(event: MouseEvent) {
   applyExplosion(hits[0].point);
 }
 
-const EXPLOSION_RADIUS   = 2;    // units
-const EXPLOSION_STRENGTH = 36;   // impulse magnitude at centre
-
 function applyExplosion(center: THREE.Vector3) {
-  // Snap the point light to the hit position and restart its fade
   if (explosionLight) {
     explosionLight.position.copy(center).y += 0.5;
     explosionLight.intensity = EXPLOSION_LIGHT_INTENSITY;
@@ -184,14 +171,16 @@ function applyExplosion(center: THREE.Vector3) {
     const dy = by - center.y;
     const dz = bz - center.z;
     const distSq = dx*dx + dy*dy + dz*dz;
-    if (distSq > EXPLOSION_RADIUS * EXPLOSION_RADIUS) continue;
+    if (distSq > EXPLOSION_RADIUS * EXPLOSION_RADIUS) {
+      continue;
+    }
 
     const dist = Math.sqrt(distSq) || 0.001;
     // Linear falloff; always push slightly upward even if object is right below
     const falloff = 1 - dist / EXPLOSION_RADIUS;
     const scale = EXPLOSION_STRENGTH * falloff / dist;
     const ix = dx * scale;
-    const iy = Math.max(dy, 0.5) * scale; // bias upward
+    const iy = Math.max(dy, 0.5) * scale;
     const iz = dz * scale;
 
     bodyInterface.ActivateBody(body.GetID());
@@ -202,9 +191,8 @@ function applyExplosion(center: THREE.Vector3) {
 function animate(time: number) {
   time *= 0.001;  // convert time to seconds
 
-  // Fade explosion point light
   if (explosionLight && explosionLight.intensity > 0) {
-    const t = Math.min((time - explosionLightBorn) / EXPLOSION_LIGHT_DURATION, 1);
+    const t = Math.min((time - explosionLightBorn) / EXPLOSION_LIGHT_DURATION_IN_SECONDS, 1);
     explosionLight.intensity = EXPLOSION_LIGHT_INTENSITY * (1 - t) * (1 - t);
   }
 
@@ -275,7 +263,6 @@ function setupGui() {
       startSpawning();
     });
 
-  // add  light parameters in a folder
   const lightFolder = gui.addFolder('Light');
   lightFolder.addColor({ color: lightColor }, 'color')
     .name('Color')
@@ -297,9 +284,21 @@ function setupGui() {
         light.intensity = lightIntensity;
       }
     });
+
+  const explosionFolder = gui.addFolder('Explosion');
+  explosionFolder.add({ EXPLOSION_RADIUS }, 'EXPLOSION_RADIUS', 0.5, 10, 0.1)
+    .name('Radius')
+    .onChange((value: number) => {
+      EXPLOSION_RADIUS = value;
+    });
+  explosionFolder.add({ EXPLOSION_STRENGTH }, 'EXPLOSION_STRENGTH', 1, 200, 1)
+    .name('Strength')
+    .onChange((value: number) => {
+      EXPLOSION_STRENGTH = value;
+    });
 }
 
-function addDirectionalLight(scene: THREE.Scene) {
+function addLight(scene: THREE.Scene) {
   light = new THREE.DirectionalLight(lightColor, lightIntensity);
   light.position.set(10, 10, 1);
   light.castShadow = true;
@@ -319,7 +318,6 @@ function addDirectionalLight(scene: THREE.Scene) {
 function createMeshFloor(n: number, cellSize: number, maxHeight: number, posX: number, posY: number, posZ: number): THREE.Mesh {
   const heightFn = (x: number, y: number) => improvedNoise.noise(x / 5, maxHeight, y / 5);
 
-  // Build Jolt triangle list
   const triangles = new Jolt.TriangleList();
   triangles.resize(n * n * 2);
   for (let x = 0; x < n; ++x) {
@@ -346,7 +344,6 @@ function createMeshFloor(n: number, cellSize: number, maxHeight: number, posX: n
   Jolt.destroy(triangles);
   Jolt.destroy(mats);
 
-  // Create static physics body
   const creationSettings = new Jolt.BodyCreationSettings(
     shape, new Jolt.RVec3(posX, posY, posZ), new Jolt.Quat(0, 0, 0, 1),
     Jolt.EMotionType_Static, LAYER_NON_MOVING
@@ -355,7 +352,6 @@ function createMeshFloor(n: number, cellSize: number, maxHeight: number, posX: n
   bodyInterface.AddBody(body.GetID(), Jolt.EActivation_DontActivate);
   Jolt.destroy(creationSettings);
 
-  // Extract THREE.js geometry from the Jolt shape triangles
   const scale = new Jolt.Vec3(1, 1, 1);
   const triContext = new Jolt.ShapeGetTriangles(
     shape, Jolt.AABox.prototype.sBiggest(),
@@ -387,7 +383,6 @@ const SPAWN_COLORS = [
   0xff8844, 0x88ff44, 0x4488cc, 0xff4488, 0x44ff88, 0xaa44ff,
 ];
 
-/** Extract a Three.js BufferGeometry from any Jolt shape via ShapeGetTriangles. */
 function getThreeGeometryFromShape(shape: any): THREE.BufferGeometry {
   const scale = new Jolt.Vec3(1, 1, 1);
   const triCtx = new Jolt.ShapeGetTriangles(
@@ -423,33 +418,33 @@ function spawnMesh() {
   let geometry: THREE.BufferGeometry;
 
   switch (objectType) {
-    case 0: { // Sphere
+    case 0: {
       const radius = size / 2;
       shape = new Jolt.SphereShape(radius);
       geometry = new THREE.SphereGeometry(radius, 16, 12);
       break;
     }
-    case 1: { // Box
+    case 1: {
       const h = size / 2;
       shape = new Jolt.BoxShape(new Jolt.Vec3(h, h, h), 0.05 * h);
       geometry = new THREE.BoxGeometry(size, size, size);
       break;
     }
-    case 2: { // Cylinder
+    case 2: {
       const radius = size / 2;
       const halfH = size / 2;
       shape = new Jolt.CylinderShape(halfH, radius, 0.05);
       geometry = new THREE.CylinderGeometry(radius, radius, size, 16);
       break;
     }
-    case 3: { // Capsule
+    case 3: {
       const radius = size / 3;
       const halfH = size / 3;
       shape = new Jolt.CapsuleShape(halfH, radius);
       geometry = new THREE.CapsuleGeometry(radius, halfH * 2, 8, 16);
       break;
     }
-    case 4: { // Convex hull — random point cloud
+    case 4: {
       const hullSettings = new Jolt.ConvexHullShapeSettings();
       for (let p = 0; p < 10; ++p) {
         hullSettings.mPoints.push_back(new Jolt.Vec3(
@@ -463,7 +458,7 @@ function spawnMesh() {
       geometry = getThreeGeometryFromShape(shape);
       break;
     }
-    case 5: { // Tapered cylinder (cone-like)
+    case 5: {
       const topRadius = size * 0.05;
       const bottomRadius = size * 0.4;
       const halfH = size * 0.35;
@@ -471,7 +466,7 @@ function spawnMesh() {
       geometry = getThreeGeometryFromShape(shape);
       break;
     }
-    case 6: { // Compound dumbbell (two spheres + capsule bar)
+    case 6: {
       const r2 = size * 0.25;
       const r1 = r2 * 0.4;
       const l = size * 0.35;
@@ -517,10 +512,11 @@ function spawnMesh() {
   );
   creationSettings.mRestitution = 0.3;
 
-  const mass = new Jolt.MassProperties();
-  mass.mMass = Math.random() * 4 + 1;
-  creationSettings.mMassPropertiesOverride = mass;
-  creationSettings.mOverrideMassProperties = Jolt.EOverrideMassProperties_CalculateInertia;
+  // optionally we can set fixed weights
+  // const mass = new Jolt.MassProperties();
+  // mass.mMass = Math.random() * 4 + 1;
+  // creationSettings.mMassPropertiesOverride = mass;
+  // creationSettings.mOverrideMassProperties = Jolt.EOverrideMassProperties_CalculateInertia;
 
   const body = bodyInterface.CreateBody(creationSettings);
   bodyInterface.AddBody(body.GetID(), Jolt.EActivation_Activate);
@@ -546,7 +542,6 @@ function killMesh(mesh: THREE.Mesh, body: any) {
   bodyInterface.RemoveBody(body.GetID());
   bodyInterface.DestroyBody(body.GetID());
 
-  // Resume spawning now that count dropped below max
   startSpawning();
 }
 
