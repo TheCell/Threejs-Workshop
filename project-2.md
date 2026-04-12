@@ -130,3 +130,6 @@ function applyExplosion(center: THREE.Vector3) { // exists already
 
 And we are done. With the physics interaction it should look like this:
  ![Explosions](./media/Explosions.webp)
+
+> [!TIP]
+> Take a look at what other libraries and plugins exist and try to implement another one [Doc](https://threejs.org/manual/#en/libraries-and-plugins)

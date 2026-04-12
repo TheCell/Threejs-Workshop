@@ -316,7 +316,3 @@ Now lets do something with the added functionality. Lets move things around whil
 
   const activeGroup = draggedGroup ?? hitGroup; // already there
 ```
-
-> [!TIP]
-> Take a look at what other libraries and plugins exist and try to implement another one [Doc](https://threejs.org/manual/#en/libraries-and-plugins)
-
