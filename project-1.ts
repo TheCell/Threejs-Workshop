@@ -81,7 +81,6 @@ function updateCamera() {
   if (keysPressed.has('KeyE')) {
     camera.position.y += cameraSpeed;
   }
-
 }
 
 function main() {
@@ -126,13 +125,13 @@ function onPointerMove(event: PointerEvent) {
 const raycaster = new THREE.Raycaster();
 const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1);
 const dragIntersection = new THREE.Vector3();
-let dragOffsetY = 0;
 
 function handleInteraction() {
   raycaster.setFromCamera(normalizedPointerPosition, camera!);
   const intersects = raycaster.intersectObjects(meshes);
   const hitMesh = intersects[0]?.object as THREE.Mesh | undefined;
   const hitGroup = hitMesh ? meshToGroup.get(hitMesh) ?? hitMesh : undefined;
+  let dragOffsetY = 0;
 
   if (isPointerDown && !draggedGroup && hitGroup) {
     draggedGroup = hitGroup;
