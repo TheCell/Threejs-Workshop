@@ -1,16 +1,91 @@
 
 # Basic Camera
-1. Create Camera
-    - ![cameraFrustum](./images/frustum-3d.svg)
-2. Create Object
-    - Cube
-    - MeshBasicMaterial
-4. Add Light
-    - why does the light not work?
-5. Change the Material
-    - MeshPhongMaterial
+First we start out with a basic camera. A camera has a few parameters best explained with an image.
+![cameraFrustum](./images/frustum-3d.svg)
 
-## Camera moving
+Lets add a camera in the `main()` method.
+```javascript
+function main() {  // exists already 
+  ...  // exists already 
+  renderer.shadowMap.enabled = true;  // exists already 
+  scene = new THREE.Scene();  // exists already 
+
+  const fov = 75;
+  const aspect = 2;
+  const near = 0.01;
+  const far = 50;
+  camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+  camera.position.y = 4 ;
+  camera.position.z = 4;
+  camera.lookAt(0, 0, 0);
+
+  renderer.render(scene, camera);
+  renderer.domElement.addEventListener( 'pointermove', onPointerMove );
+
+  addLight(scene); // exists already 
+```
+
+> [!TIP]
+> Once we have something to see, try another camera besides PerspectiveCamera for example the OrthographicCamera
+
+## light
+In order to see any objects we need to add light to the scene. Add an ambient light to the `addLight(scene: THREE.Scene)` method
+
+```javascript
+function addLight(scene: THREE.Scene) { // exists already 
+  ambientLight = new THREE.AmbientLight(0xFFFFFF, 1);
+  scene.add(ambientLight);
+}
+```
+
+
+# Add something to see
+We now have a camera but we don't see anything. Now we add a floor plane and an object above the floor. Find the `addFloor(scene: THREE.Scene)` method and create a plane. Also add a TorusKnot (plain boxes are boring) in the `addShape(scene: THREE.Scene)` method
+
+```javascript
+function addFloor(scene: THREE.Scene) { // exists already 
+  const floorSize = 10;
+  const floorGeometry = new THREE.PlaneGeometry(floorSize, floorSize);
+  const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.8 });
+  const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+  floor.position.y = -1;
+  floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
+  scene.add(floor);
+}
+```
+
+```javascript
+function addShape(scene: THREE.Scene) { // exists already 
+  const geometry = new THREE.TorusKnotGeometry(0.5, 0.2, 100, 16);
+  const material = new THREE.MeshStandardMaterial({ color: basicColor });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.castShadow = true;
+  scene.add(mesh);
+  meshes.push(mesh);
+  meshToGroup.set(mesh, mesh);
+}
+```
+
+# Directional light
+Our scene looks very 1-Dimensional. That is because we have only an ambient light. Ambient light does light up all objects evenly without any highlights. There are no shadows and no light and dark spots on objects. With a directional light (a spotlight, the sun etc.) we can add some depth. Extend the `addLight(scene: THREE.Scene)` method.
+
+```javascript
+function addLight(scene: THREE.Scene) { // exists already 
+  ambientLight = new THREE.AmbientLight(0xFFFFFF, 1); // exists already 
+  scene.add(ambientLight); // exists already 
+
+  light = new THREE.DirectionalLight(lightColor, lightIntensity);
+  light.position.set(Math.cos(lightAngle) * lightRadius, 10, Math.sin(lightAngle) * lightRadius);
+  light.castShadow = true;
+  scene.add(light);
+}
+```
+
+> [!TIP]
+> Try a different material on your shapes and see what changes. Try MeshBasicMaterial and MeshNormalMaterial. See that the MeshBasicMaterial goes back to rendering the objects without the directional ligths. This is because the shader ignores complex lights.
+
+# Camera moving
 To move the camera around, we'll listen to the keyboard inputs. Let's add some listeners to fill the Set I have prepared:
 ```javascript
 const keysPressed = new Set<string>(); // exists already 
@@ -21,7 +96,7 @@ window.addEventListener('keyup', (e) => keysPressed.delete(e.code));
 ## Moving the camera around
 Now we can manipulate the camera position via keyboard. I suggest WASD for moving around and Q and E for moving up and down. Find the `updateCamera()` function and fill it.
 ```javascript
-function updateCamera() {
+function updateCamera() { // exists already 
   if (!camera) return;
   camera.getWorldDirection(cameraForward);
   cameraForward.y = 0;
@@ -54,12 +129,32 @@ function updateCamera() {
 }
 
 ```
+
 > [!TIP]
 > You can try adding camera rotation if you want an extra challenge (We are looking down with an angle, if you are confused why it will not rotate as you might think).
 
-
 # Animation
+Our testobject is quite static. We could add a screenshot and it would be more compatible with old devices. You would not see the difference. Lets add some animation in the `animate(time: number)` method. We can manipulate objects position and rotation directly be overwriting the values.
 
+```javascript
+function animate(time: number) { // exists already 
+  time *= 0.001;  // convert time to seconds
+  
+  if (rotateObjects) {
+    const groups = new Set(meshToGroup.values());
+    for (let i = 0; i < groups.size; i++) {
+      const group = Array.from(groups)[i];
+      if (i === 0) {
+        group.rotation.x = time;
+      }
+      group.rotation.y = time;
+    }
+  }
+}
+```
+
+When done properly we should now see our Torus rotating
+![animation](./media/animation.webp)
 
 # 3D Model import / export
 These primitives are good to get started and we could define our own shapes by hand. But that gets confusing very quickly. For that we have 3D Object file formats. I've already included a list of animals from [Kenney](https://kenney.nl/assets/cube-pets). I've already added the GLTF Loader addon.

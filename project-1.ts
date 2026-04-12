@@ -52,34 +52,9 @@ const originalMaterials = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>
 const meshToGroup = new Map<THREE.Mesh, THREE.Object3D>();
 
 function updateCamera() {
-  if (!camera) return;
-  camera.getWorldDirection(cameraForward);
-  cameraForward.y = 0;
-  cameraForward.normalize();
-  cameraRight.crossVectors(cameraForward, up).normalize();
-
-  if (keysPressed.has('KeyW')) {
-    camera.position.addScaledVector(cameraForward, cameraSpeed);
-  }
-
-  if (keysPressed.has('KeyS')) {
-    camera.position.addScaledVector(cameraForward, -cameraSpeed);
-  }
-
-  if (keysPressed.has('KeyA')) {
-    camera.position.addScaledVector(cameraRight, -cameraSpeed);
-  }
-
-  if (keysPressed.has('KeyD')) {
-    camera.position.addScaledVector(cameraRight, cameraSpeed);
-  }
-
-  if (keysPressed.has('KeyQ')) {
-    camera.position.y -= cameraSpeed;
-  }
-
-  if (keysPressed.has('KeyE')) {
-    camera.position.y += cameraSpeed;
+  if (!camera)
+  {
+    return;
   }
 }
 
@@ -91,24 +66,11 @@ function main() {
 
   renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
   renderer.shadowMap.enabled = true;
-
-  const fov = 75;
-  const aspect = 2;
-  const near = 0.01;
-  const far = 50;
-  camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-  camera.position.y = 4 ;
-  camera.position.z = 4;
-  camera.lookAt(0, 0, 0);
-
   scene = new THREE.Scene();
 
-  renderer.render(scene, camera);
-  renderer.domElement.addEventListener( 'pointermove', onPointerMove );
-
-  addDirectionalLight(scene);
+  addLight(scene);
   addFloor(scene);
-  addShapes(scene);
+  addShape(scene);
 
   setupGui();
   requestAnimationFrame(render);
@@ -129,6 +91,10 @@ let lastRenderTime = 0;
 let targetFps = 30;
 let targetFrameDuration = 1000 / targetFps;
 function render(time: number) {
+  if (!camera) {
+    return;
+  }
+  
   stats.begin();
   animate(time);
 
@@ -158,18 +124,6 @@ function render(time: number) {
 }
 
 function animate(time: number) {
-  time *= 0.001;  // convert time to seconds
-  
-  if (rotateObjects) {
-    const groups = new Set(meshToGroup.values());
-    for (let i = 0; i < groups.size; i++) {
-      const group = Array.from(groups)[i];
-      if (i === 0) {
-        group.rotation.x = time;
-      }
-      group.rotation.y = time;
-    }
-  }
 }
 
 function resizeRendererToDisplaySize(renderer: THREE.WebGLRenderer) {
@@ -278,44 +232,21 @@ function setupGui() {
     });
 }
 
-function addDirectionalLight(scene: THREE.Scene) {
-  light = new THREE.DirectionalLight(lightColor, lightIntensity);
-  light.position.set(Math.cos(lightAngle) * lightRadius, 10, Math.sin(lightAngle) * lightRadius);
-  light.castShadow = true;
-  scene.add(light);
-
-  ambientLight = new THREE.AmbientLight(0xFFFFFF, 1);
-  scene.add(ambientLight);
-}
-
-function addFloor(scene: THREE.Scene) {
-  const floorSize = 10;
-  const floorGeometry = new THREE.PlaneGeometry(floorSize, floorSize);
-  const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.8 });
-  const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-  floor.position.y = -1;
-  floor.rotation.x = -Math.PI / 2;
-  floor.receiveShadow = true;
-  scene.add(floor);
-}
-
 function getMeshesInGroup(group: THREE.Object3D): THREE.Mesh[] {
   return meshes.filter((m) => meshToGroup.get(m) === group);
 }
 
-const gltfLoader = new GLTFLoader();
-
 function importModel() {
 }
 
-function addShapes(scene: THREE.Scene) {
-  const geometry = new THREE.TorusKnotGeometry(0.5, 0.2, 100, 16);
-  const material = new THREE.MeshStandardMaterial({ color: basicColor });
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.castShadow = true;
-  scene.add(mesh);
-  meshes.push(mesh);
-  meshToGroup.set(mesh, mesh);
+function addLight(scene: THREE.Scene) {
+}
+
+function addFloor(scene: THREE.Scene) {
+}
+
+
+function addShape(scene: THREE.Scene) {
 }
 
 
