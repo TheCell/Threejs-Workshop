@@ -85,6 +85,8 @@ function addLight(scene: THREE.Scene) { // exists already
 }
 ```
 
+![DirectionalLight](./media/DirectionalLight.webp)
+
 > [!TIP]
 > Try a different material on your shapes and see what changes. Try MeshBasicMaterial and MeshNormalMaterial. See that the MeshBasicMaterial goes back to rendering the objects without the directional ligths. This is because the shader ignores complex lights.
 
