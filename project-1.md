@@ -67,6 +67,9 @@ function addShape(scene: THREE.Scene) { // exists already
 }
 ```
 
+You should now have something to see. The scene should now look like this.
+![animation](./media/basic scene.webp)
+
 # Directional light
 Our scene looks very 1-Dimensional. That is because we have only an ambient light. Ambient light does light up all objects evenly without any highlights. There are no shadows and no light and dark spots on objects. With a directional light (a spotlight, the sun etc.) we can add some depth. Extend the `addLight(scene: THREE.Scene)` method.
 

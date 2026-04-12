@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 import GUI from 'lil-gui';
-import Stats from 'three/examples/jsm/libs/stats.module.js';
+import Stats from 'three/addons/libs/stats.module.js';
 import { ImprovedNoise } from 'three/addons/math/ImprovedNoise.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import JoltPhysics from 'jolt-physics/wasm';
 
 const improvedNoise = new ImprovedNoise();
 const Jolt = await JoltPhysics();
 
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 let displayDebug = false;
 let limitFps = true;
@@ -33,19 +33,13 @@ let showAxes = false;
 const spawnedMeshes: THREE.Mesh[] = [];
 let spawnInterval: ReturnType<typeof setInterval> | undefined;
 
-// Jolt physics (direct — no THREE.js addon wrapper)
 const LAYER_NON_MOVING = 0;
 const LAYER_MOVING = 1;
-// let Jolt: any = null;
 let joltInterface: any = null;
 let bodyInterface: any = null;
 const dynamicBodies: Array<{ mesh: THREE.Mesh; body: any }> = [];
 
 const KILL_Y = -12; // anything below this Y is removed and respawned
-
-// const { default: initJolt } = await import(/* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/jolt-physics@1.0.0/dist/jolt-physics.wasm-compat.js');
-// Jolt = await initJolt();
-
 
 const _joltSettings = new Jolt.JoltSettings();
 const _objectFilter = new Jolt.ObjectLayerPairFilterTable(2);
@@ -82,14 +76,14 @@ function main() {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
+  scene = new THREE.Scene();
+
   const fov = 75;
   const aspect = 2;
   const near = 0.01;
   const far = 50;
   camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
   camera.position.z = 2;
-
-  scene = new THREE.Scene();
 
   const floor = createMeshFloor(50, 0.5, 1, 0, -4, -1);
   floorMesh = floor;
@@ -100,7 +94,7 @@ function main() {
   killFloorGrid.position.set(0, KILL_Y, -1);
   scene.add(killFloorGrid);
 
-  addDirectionalLight(scene);
+  addLight(scene);
 
   // Explosion point light — starts off, teleports to each hit and fades
   explosionLight = new THREE.PointLight(0xff6600, 0, EXPLOSION_RADIUS * 3);
@@ -202,7 +196,6 @@ function applyExplosion(center: THREE.Vector3) {
 function animate(time: number) {
   time *= 0.001;  // convert time to seconds
 
-  // Fade explosion point light
   if (explosionLight && explosionLight.intensity > 0) {
     const t = Math.min((time - explosionLightBorn) / EXPLOSION_LIGHT_DURATION, 1);
     explosionLight.intensity = EXPLOSION_LIGHT_INTENSITY * (1 - t) * (1 - t);
@@ -299,7 +292,7 @@ function setupGui() {
     });
 }
 
-function addDirectionalLight(scene: THREE.Scene) {
+function addLight(scene: THREE.Scene) {
   light = new THREE.DirectionalLight(lightColor, lightIntensity);
   light.position.set(10, 10, 1);
   light.castShadow = true;

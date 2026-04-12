@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import GUI from 'lil-gui';
-import Stats from 'three/examples/jsm/libs/stats.module.js';
+import Stats from 'three/addons/libs/stats.module.js';
 
 let displayDebug = false;
 let limitFps = true;
@@ -122,6 +122,8 @@ function main() {
   renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
   renderer.shadowMap.enabled = true;
 
+  scene = new THREE.Scene();
+
   const fov = 75;
   const aspect = 2;
   const near = 0.01;
@@ -131,13 +133,11 @@ function main() {
   camera.position.z = 3.5;
   camera.lookAt(0, -1, 0);
 
-  scene = new THREE.Scene();
-
   addShapes(scene);
 
   renderer.render(scene, camera);
 
-  addDirectionalLight(scene);
+  addLight(scene);
 
   setupGui();
   requestAnimationFrame(render);
@@ -272,7 +272,7 @@ function setupGui() {
 
 }
 
-function addDirectionalLight(scene: THREE.Scene) {
+function addLight(scene: THREE.Scene) {
   light = new THREE.DirectionalLight(lightColor, lightIntensity);
   light.position.set(Math.cos(lightAngle) * lightRadius, 10, Math.sin(lightAngle) * lightRadius);
   light.castShadow = true;
