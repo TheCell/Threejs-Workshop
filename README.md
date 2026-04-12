@@ -43,17 +43,7 @@ This workshop uses Images and code provided by Three.js and JoltPhysics.
 - 3D Model import / export
 - Interaction with Objects
 
-## Camera
-1. Create Camera
-    - ![cameraFrustum](./images/frustum-3d.svg)
-2. Create Object
-    - Cube
-    - MeshBasicMaterial
-4. Add Light
-    - why does the light not work?
-5. Change the Material
-    - MeshPhongMaterial
-    
+Learn how to do it under [project-1.md](project-1.md)
 
 # Project 2
 - OrbitCamera
@@ -71,6 +61,8 @@ This workshop uses Images and code provided by Three.js and JoltPhysics.
 ## Step by Step
 1. Add Orbit Controls
     - https://threejs.org/docs/?q=orbit#OrbitControls
+
+see [project-2.md](project-2.md)
 
 # Project 3
 - Write your own Shader
