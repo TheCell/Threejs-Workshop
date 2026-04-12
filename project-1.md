@@ -62,6 +62,66 @@ function updateCamera() {
 
 
 # 3D Model import / export
+These primitives are good to get started and we could define our own shapes by hand. But that gets confusing very quickly. For that we have 3D Object file formats. I've already included a list of animals from [Kenney](https://kenney.nl/assets/cube-pets). I've already added the GLTF Loader addon.
+
+## Adding import functionality
+Let's go ahead and create a loader above the `importModel()` method:
+```javascript
+const gltfLoader = new GLTFLoader();
+
+function importModel() { // exists already 
+```
+
+## Referencing files from our file system
+To add objects to our virtual scene we have to load them from disc. We are still in a browser window so the way to do this is via html input.
+```javascript
+function importModel() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.glb,.gltf';
+  input.onchange = () => {
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+  };
+  input.click();
+}
+```
+
+## Adding files to scene
+Now we can reference files from disc but we still have to add them to our virtual scene. This is done with the FileReader and the gltfLoader. We have to read the file first and then parse it to get valid gltf files out of it. There are other loaders like Obj and FBX alreadyd prebuilt.
+
+```javascript
+    if (!file) { // exists already 
+      return; // exists already 
+    } // exists already 
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const data = event.target!.result as ArrayBuffer;
+      gltfLoader.parse(data, '/GLB format/', (gltf) => {
+        const model = gltf.scene;
+        
+        model.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            const mesh = child as THREE.Mesh;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            meshes.push(mesh);
+            meshToGroup.set(mesh, model);
+          }
+        });
+        scene!.add(model);
+      });
+    };
+    reader.readAsArrayBuffer(file);
+  }; // exists already 
+  input.click(); // exists already 
+```
+
+> [!TIP]
+> Extra challenge. Download another set of gltf files and try adding them.
 
 # Interaction with Objects
 Finally, we add some interaction with models. Otherwise this is just a computationally intensive video.
@@ -138,7 +198,7 @@ To visually show that we can interact with an object, we swap the object materia
 It should now look like this:
 ![Interaction](./media/Interaction.webp)
 
-## adding dragging
+## Adding dragging
 Now lets do something with the added functionality. Lets move things around while we have them active.
 ```javascript
   let dragOffsetY = 0; // already there

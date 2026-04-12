@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import GUI from 'lil-gui';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 let displayDebug = false;
 let limitFps = true;
@@ -122,44 +122,7 @@ function onPointerMove(event: PointerEvent) {
   normalizedPointerPosition.set(x, -y);
 }
 
-const raycaster = new THREE.Raycaster();
-const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1);
-const dragIntersection = new THREE.Vector3();
-
 function handleInteraction() {
-  raycaster.setFromCamera(normalizedPointerPosition, camera!);
-  const intersects = raycaster.intersectObjects(meshes);
-  const hitMesh = intersects[0]?.object as THREE.Mesh | undefined;
-  const hitGroup = hitMesh ? meshToGroup.get(hitMesh) ?? hitMesh : undefined;
-  let dragOffsetY = 0;
-
-  if (isPointerDown && !draggedGroup && hitGroup) {
-    draggedGroup = hitGroup;
-    dragOffsetY = hitGroup.position.y;
-  }
-
-  if (isPointerDown && draggedGroup) {
-    if (raycaster.ray.intersectPlane(dragPlane, dragIntersection)) {
-      draggedGroup.position.x = dragIntersection.x;
-      draggedGroup.position.z = dragIntersection.z;
-      draggedGroup.position.y = dragOffsetY;
-    }
-  }
-
-  const activeGroup = draggedGroup ?? hitGroup;
-  const activeMeshes = activeGroup ? getMeshesInGroup(activeGroup) : [];
-
-  for (const mesh of meshes) {
-    if (activeMeshes.includes(mesh)) {
-      if (!originalMaterials.has(mesh)) {
-        originalMaterials.set(mesh, mesh.material);
-      }
-      mesh.material = isPointerDown ? pickMaterial : highlightMaterial;
-    } else if (originalMaterials.has(mesh)) {
-      mesh.material = originalMaterials.get(mesh)!;
-      originalMaterials.delete(mesh);
-    }
-  }
 }
 
 let lastRenderTime = 0;
@@ -336,43 +299,13 @@ function addFloor(scene: THREE.Scene) {
   scene.add(floor);
 }
 
-const gltfLoader = new GLTFLoader();
-
 function getMeshesInGroup(group: THREE.Object3D): THREE.Mesh[] {
   return meshes.filter((m) => meshToGroup.get(m) === group);
 }
 
-function importModel() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.glb,.gltf';
-  input.onchange = () => {
-    const file = input.files?.[0];
-    if (!file) {
-      return;
-    }
+const gltfLoader = new GLTFLoader();
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const data = event.target!.result as ArrayBuffer;
-      gltfLoader.parse(data, '/GLB format/', (gltf) => {
-        const model = gltf.scene;
-        
-        model.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh) {
-            const mesh = child as THREE.Mesh;
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            meshes.push(mesh);
-            meshToGroup.set(mesh, model);
-          }
-        });
-        scene!.add(model);
-      });
-    };
-    reader.readAsArrayBuffer(file);
-  };
-  input.click();
+function importModel() {
 }
 
 function addShapes(scene: THREE.Scene) {
