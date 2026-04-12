@@ -40,6 +40,9 @@ This workshop uses Images and code provided by Three.js and JoltPhysics.
 
 # Project 1
 - Basic Camera
+- Basic shape
+- Camera movement
+- animation
 - 3D Model import / export
 - Interaction with Objects
 
