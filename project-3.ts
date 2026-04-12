@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import GUI from 'lil-gui';
-import Stats from 'three/examples/jsm/libs/stats.module.js';
+import Stats from 'three/addons/libs/stats.module.js';
 
 let displayDebug = false;
 let limitFps = true;
@@ -29,9 +29,7 @@ const keysPressed = new Set<string>();
 window.addEventListener('keydown', (e) => keysPressed.add(e.code));
 window.addEventListener('keyup', (e) => keysPressed.delete(e.code));
 
-
 // take a look at https://www.shadertoy.com/ and https://fragcoord.xyz/explore for more shader ideas
-
 const uniforms = {
   iTime: { value: 0 },
   iResolution: { value: new THREE.Vector3() },

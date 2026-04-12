@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import GUI from 'lil-gui';
-import Stats from 'three/examples/jsm/libs/stats.module.js';
+import Stats from 'three/addons/libs/stats.module.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 let displayDebug = false;
@@ -93,6 +93,8 @@ function main() {
   renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
   renderer.shadowMap.enabled = true;
 
+  scene = new THREE.Scene();
+
   const fov = 75;
   const aspect = 2;
   const near = 0.01;
@@ -102,14 +104,12 @@ function main() {
   camera.position.z = 4;
   camera.lookAt(0, 0, 0);
 
-  scene = new THREE.Scene();
-
   renderer.render(scene, camera);
   renderer.domElement.addEventListener( 'pointermove', onPointerMove );
 
-  addDirectionalLight(scene);
+  addLight(scene);
   addFloor(scene);
-  addShapes(scene);
+  addShape(scene);
 
   setupGui();
   requestAnimationFrame(render);
@@ -316,32 +316,11 @@ function setupGui() {
     });
 }
 
-function addDirectionalLight(scene: THREE.Scene) {
-  light = new THREE.DirectionalLight(lightColor, lightIntensity);
-  light.position.set(Math.cos(lightAngle) * lightRadius, 10, Math.sin(lightAngle) * lightRadius);
-  light.castShadow = true;
-  scene.add(light);
-
-  ambientLight = new THREE.AmbientLight(0xFFFFFF, 1);
-  scene.add(ambientLight);
-}
-
-function addFloor(scene: THREE.Scene) {
-  const floorSize = 10;
-  const floorGeometry = new THREE.PlaneGeometry(floorSize, floorSize);
-  const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.8 });
-  const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-  floor.position.y = -1;
-  floor.rotation.x = -Math.PI / 2;
-  floor.receiveShadow = true;
-  scene.add(floor);
-}
-
-const gltfLoader = new GLTFLoader();
-
 function getMeshesInGroup(group: THREE.Object3D): THREE.Mesh[] {
   return meshes.filter((m) => meshToGroup.get(m) === group);
 }
+
+const gltfLoader = new GLTFLoader();
 
 function importModel() {
   const input = document.createElement('input');
@@ -376,7 +355,28 @@ function importModel() {
   input.click();
 }
 
-function addShapes(scene: THREE.Scene) {
+function addLight(scene: THREE.Scene) {
+  light = new THREE.DirectionalLight(lightColor, lightIntensity);
+  light.position.set(Math.cos(lightAngle) * lightRadius, 10, Math.sin(lightAngle) * lightRadius);
+  light.castShadow = true;
+  scene.add(light);
+
+  ambientLight = new THREE.AmbientLight(0xFFFFFF, 1);
+  scene.add(ambientLight);
+}
+
+function addFloor(scene: THREE.Scene) {
+  const floorSize = 10;
+  const floorGeometry = new THREE.PlaneGeometry(floorSize, floorSize);
+  const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.8 });
+  const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+  floor.position.y = -1;
+  floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
+  scene.add(floor);
+}
+
+function addShape(scene: THREE.Scene) {
   const geometry = new THREE.TorusKnotGeometry(0.5, 0.2, 100, 16);
   const material = new THREE.MeshStandardMaterial({ color: basicColor });
   const mesh = new THREE.Mesh(geometry, material);
