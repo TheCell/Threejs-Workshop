@@ -5,10 +5,10 @@ First we start out with a basic camera. A camera has a few parameters best expla
 
 Lets add a camera in the `main()` method.
 ```javascript
-function main() {  // exists already 
-  ...  // exists already 
-  renderer.shadowMap.enabled = true;  // exists already 
-  scene = new THREE.Scene();  // exists already 
+function main() { // exists already 
+  ... // exists already 
+  renderer.shadowMap.enabled = true; // exists already 
+  scene = new THREE.Scene(); // exists already 
 
   const fov = 75;
   const aspect = 2;
@@ -68,7 +68,7 @@ function addShape(scene: THREE.Scene) { // exists already
 ```
 
 You should now have something to see. The scene should now look like this.
-![animation](./media/basic scene.webp)
+![animation](./media/basicScene.webp)
 
 # Directional light
 Our scene looks very 1-Dimensional. That is because we have only an ambient light. Ambient light does light up all objects evenly without any highlights. There are no shadows and no light and dark spots on objects. With a directional light (a spotlight, the sun etc.) we can add some depth. Extend the `addLight(scene: THREE.Scene)` method.
@@ -316,3 +316,7 @@ Now lets do something with the added functionality. Lets move things around whil
 
   const activeGroup = draggedGroup ?? hitGroup; // already there
 ```
+
+> [!TIP]
+> Take a look at what other libraries and plugins exist and try to implement another one [Doc](https://threejs.org/manual/#en/libraries-and-plugins)
+

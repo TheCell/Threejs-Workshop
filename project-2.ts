@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import GUI from 'lil-gui';
 import Stats from 'three/addons/libs/stats.module.js';
 import { ImprovedNoise } from 'three/addons/math/ImprovedNoise.js';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import JoltPhysics from 'jolt-physics/wasm';
 
 const improvedNoise = new ImprovedNoise();
@@ -19,7 +18,6 @@ document.body.appendChild(stats.dom);
 let renderer: THREE.WebGLRenderer | undefined;
 let scene: THREE.Scene | undefined;
 let camera: THREE.PerspectiveCamera | undefined;
-let controls: OrbitControls | undefined;
 
 let lightColor = 0xFFFFFF;
 let lightIntensity = 1;
@@ -61,8 +59,6 @@ setInterval(() => { joltInterface.Step(1 / 60, 1); }, 1000 / 60);
 
 let floorMesh: THREE.Mesh | undefined;
 
-let explosionLight: THREE.PointLight | undefined;
-let explosionLightBorn = -Infinity;
 const EXPLOSION_LIGHT_DURATION_IN_SECONDS = 0.6;
 const EXPLOSION_LIGHT_INTENSITY = 80;
 function main() {
@@ -94,13 +90,7 @@ function main() {
 
   addLight(scene);
 
-  explosionLight = new THREE.PointLight(0xff6600, 0, EXPLOSION_RADIUS * 3);
-  explosionLight.castShadow = true;
-  scene.add(explosionLight);
-  controls = new OrbitControls(camera, renderer.domElement);
-  controls.target.set(0, -4, -1);
   camera.position.set(0, 2, 9);
-  controls.update();
   renderer.render(scene, camera);
   
   setupGui();
@@ -122,7 +112,6 @@ function render(time: number) {
     camera!.updateProjectionMatrix();
   }
   
-  controls!.update();
   renderer!.render(scene!, camera!);
   if (!limitFps) {
     requestAnimationFrame(render);
@@ -158,43 +147,10 @@ function onCanvasClick(event: MouseEvent) {
 }
 
 function applyExplosion(center: THREE.Vector3) {
-  if (explosionLight) {
-    explosionLight.position.copy(center).y += 0.5;
-    explosionLight.intensity = EXPLOSION_LIGHT_INTENSITY;
-    explosionLightBorn = performance.now() / 1000;
-  }
-
-  for (const { body } of dynamicBodies) {
-    const p = body.GetPosition();
-    const bx = p.GetX(), by = p.GetY(), bz = p.GetZ();
-    const dx = bx - center.x;
-    const dy = by - center.y;
-    const dz = bz - center.z;
-    const distSq = dx*dx + dy*dy + dz*dz;
-    if (distSq > EXPLOSION_RADIUS * EXPLOSION_RADIUS) {
-      continue;
-    }
-
-    const dist = Math.sqrt(distSq) || 0.001;
-    // Linear falloff; always push slightly upward even if object is right below
-    const falloff = 1 - dist / EXPLOSION_RADIUS;
-    const scale = EXPLOSION_STRENGTH * falloff / dist;
-    const ix = dx * scale;
-    const iy = Math.max(dy, 0.5) * scale;
-    const iz = dz * scale;
-
-    bodyInterface.ActivateBody(body.GetID());
-    bodyInterface.AddImpulse(body.GetID(), new Jolt.Vec3(ix, iy, iz));
-  }
 }
 
 function animate(time: number) {
   time *= 0.001;  // convert time to seconds
-
-  if (explosionLight && explosionLight.intensity > 0) {
-    const t = Math.min((time - explosionLightBorn) / EXPLOSION_LIGHT_DURATION_IN_SECONDS, 1);
-    explosionLight.intensity = EXPLOSION_LIGHT_INTENSITY * (1 - t) * (1 - t);
-  }
 
   const toKill: Array<{ mesh: THREE.Mesh; body: any }> = [];
   for (const entry of dynamicBodies) {
