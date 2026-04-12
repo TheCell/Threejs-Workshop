@@ -188,7 +188,7 @@ function importModel() {
 ```
 
 ## Adding files to scene
-Now we can reference files from disc but we still have to add them to our virtual scene. This is done with the FileReader and the gltfLoader. We have to read the file first and then parse it to get valid gltf files out of it. There are other loaders like Obj and FBX alreadyd prebuilt.
+Now we can reference files from disc but we still have to add them to our virtual scene. This is done with the FileReader and the gltfLoader. We have to read the file first and then parse it to get valid gltf files out of it. There are other loaders like Obj and FBX already prebuilt.
 
 ```javascript
     if (!file) { // exists already 
@@ -225,7 +225,7 @@ Now we can reference files from disc but we still have to add them to our virtua
 Finally, we add some interaction with models. Otherwise this is just a computationally intensive video.
 
 ## Mouse Events
-To have a meaningfull interaction we first need to know, if we are pressing a mouse button. Add 2 new events under the keyboard events:
+To have a meaningful interaction we first need to know, if we are pressing a mouse button. Add 2 new events under the keyboard events:
 
 ```javascript
 const keysPressed = new Set<string>(); // exists already 
@@ -244,7 +244,7 @@ window.addEventListener('pointerup', (e) => {
 
 ## Variables
 We have already a method called `handleInteraction()` in which we are now adding the logic.  
-Add some variables in front of the function for things we don't want to instaniate each frame:
+Add some variables in front of the function for things we don't want to instantiate each frame:
 ```javascript
 const raycaster = new THREE.Raycaster();
 const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1);

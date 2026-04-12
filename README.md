@@ -16,8 +16,8 @@ Small Presentation:
 ## Three.js
 [Three.js](https://www.npmjs.com/package/three)  
 The official Website [Website](https://threejs.org/)
-The defacto standard 3D Library for web.
-- The manual is here: [Manuel](https://threejs.org/manual/)
+The de facto standard 3D Library for web.
+- The manual is here: [Manual](https://threejs.org/manual/)
 - Lots of examples: [Examples](https://threejs.org/examples/)
 
 ## Stats

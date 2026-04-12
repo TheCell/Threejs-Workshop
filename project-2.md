@@ -1,5 +1,5 @@
 # Camera
-We already used a camera in our first example. In this scene we don't want to move around we want to take a 360° look around our center. We could do this like we did with the WASD controlls but: There is already a premade camera control that can do this.
+We already used a camera in our first example. In this scene we don't want to move around we want to take a 360° look around our center. We could do this like we did with the WASD controls but: There is already a premade camera control that can do this.
 
 Let's start out by importing a new Addon: `OrbitControls` [Docs](https://threejs.org/docs/?q=orbit#OrbitControls)
 
@@ -63,7 +63,7 @@ function main() { // exists already
   controls.target.set(0, -4, -1); // exists already 
 ```
 
-Animate the pointlight so that it lightgs up for a brief period.
+Animate the pointlight so that it lights up for a brief period.
 ```javascript
 function animate(time: number) { // exists already 
   time *= 0.001;  // convert time to seconds
@@ -90,7 +90,7 @@ Now we should have something like this:
 ![LightOnClick](./media/LightOnClick.webp)
 
 ## Add physics
-The light is nice but not very different compared to the interaction in the first example. Now lets enhance the `applyExplosion(center: THREE.Vector3)` method. We check all bodies in a radius and apply  an impulse and let the physics system workout the rest.
+The light is nice but not very different compared to the interaction in the first example. Now lets enhance the `applyExplosion(center: THREE.Vector3)` method. We check all bodies in a radius and apply an impulse and let the physics system work out the rest.
 
 ```javascript
 function applyExplosion(center: THREE.Vector3) { // exists already 
