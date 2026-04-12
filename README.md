@@ -51,17 +51,6 @@ Learn how to do it under [project-1.md](project-1.md)
     - Physics and Spawning is already added
 - Add-ons / Plugins
 
-## Camera
-1. Add OrbitCamera addon
-2. Setup Camera to move around the center
-
-## Physics interaction
-- Use the Jolt Physics to explode shapes where the cursor points
-
-## Step by Step
-1. Add Orbit Controls
-    - https://threejs.org/docs/?q=orbit#OrbitControls
-
 see [project-2.md](project-2.md)
 
 # Project 3
