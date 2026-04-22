@@ -7,6 +7,9 @@ Small Presentation:
 - BiBaBoulder 
 - Final Projects
 
+# Tech Requirement
+- Node Version 24.14.1
+
 # Getting Started
 1. Download the repository
 2. run npm install
