@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import GUI from 'lil-gui';
 import Stats from 'three/addons/libs/stats.module.js';
 import { ImprovedNoise } from 'three/addons/math/ImprovedNoise.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import JoltPhysics from 'jolt-physics/wasm';
 
 const improvedNoise = new ImprovedNoise();
@@ -18,6 +19,7 @@ document.body.appendChild(stats.dom);
 let renderer: THREE.WebGLRenderer | undefined;
 let scene: THREE.Scene | undefined;
 let camera: THREE.PerspectiveCamera | undefined;
+let controls: OrbitControls | undefined;
 
 let lightColor = 0xFFFFFF;
 let lightIntensity = 1;
